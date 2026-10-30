@@ -92,3 +92,15 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   `SelectField`, `DateField`, `SegmentedControl`, `PrimaryButton`) que lee solo del tema. Uber usa una tipografía propia no disponible aquí, así que se
   usa la fuente del sistema en peso 600/700.
 - **Archivos afectados:** `src/theme/index.js`, `src/components/*`, `src/screens/PersonalDataScreen.js`.
+
+## #008 · 2026-10-30 15:58 (UTC-5) · Guardar el idioma en AsyncStorage
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo persisto la preferencia de idioma con `@react-native-async-storage/async-storage` sin bloquear el formulario si el almacenamiento falla?
+- **Respuesta:** Aísla el acceso en `services/preferences.js` con `getLanguage` y `saveLanguage` envueltas en `try/catch`: la preferencia es opcional y
+  un fallo de lectura o escritura no debe romper el registro. Lee el valor una vez al montar con un `useEffect` de dependencias vacías y una bandera
+  `active` en la función de limpieza para no actualizar el estado si la pantalla ya se desmontó. Valida que lo leído sea `es` o `en` antes de usarlo,
+  y guarda en el `onChange` del selector. Se usa una clave con prefijo (`@driver_language`) y solo se guarda el idioma, nunca datos sensibles, como pide
+  el PDF para AsyncStorage.
+- **Archivos afectados:** `src/services/preferences.js`, `src/screens/PersonalDataScreen.js`.

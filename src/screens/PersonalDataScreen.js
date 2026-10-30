@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateField from '../components/DateField';
@@ -8,6 +8,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import SegmentedControl from '../components/SegmentedControl';
 import SelectField from '../components/SelectField';
 import { GENDERS, LANGUAGES } from '../data/options';
+import { getLanguage, saveLanguage } from '../services/preferences';
 import { colors, radius, spacing, typography } from '../theme';
 import {
   validateBirthDate,
@@ -48,6 +49,16 @@ const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), to
 export default function PersonalDataScreen({ onContinue }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [touched, setTouched] = useState({});
+
+  useEffect(() => {
+    let active = true;
+    getLanguage().then((stored) => {
+      if (active && LANGUAGES.some((option) => option.value === stored)) setField('language', stored);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const setField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const touch = (field) => setTouched((prev) => ({ ...prev, [field]: true }));
@@ -146,7 +157,10 @@ export default function PersonalDataScreen({ onContinue }) {
             label="Idioma"
             options={LANGUAGES}
             value={form.language}
-            onChange={(v) => setField('language', v)}
+            onChange={(v) => {
+              setField('language', v);
+              saveLanguage(v);
+            }}
           />
 
           <View style={styles.footer}>
