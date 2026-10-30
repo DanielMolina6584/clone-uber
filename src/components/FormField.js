@@ -7,7 +7,7 @@ export default function FormField({ label, error, ...inputProps }) {
       <Text style={styles.label}>{label}</Text>
       <TextInput
         style={[styles.input, error ? styles.inputError : null]}
-        placeholderTextColor={colors.textoSecundario}
+        placeholderTextColor={colors.textoDeshabilitado}
         {...inputProps}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -17,15 +17,16 @@ export default function FormField({ label, error, ...inputProps }) {
 
 const styles = StyleSheet.create({
   container: { marginBottom: spacing.md },
-  label: { ...typography.etiqueta, color: colors.texto, marginBottom: spacing.xs },
+  label: { ...typography.etiqueta, color: colors.texto, marginBottom: spacing.sm },
   input: {
     ...typography.texto,
     color: colors.texto,
-    borderWidth: 1,
-    borderColor: colors.borde,
+    backgroundColor: colors.superficie,
+    borderWidth: 2,
+    borderColor: colors.superficie,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
+    height: 52,
   },
   inputError: { borderColor: colors.error },
   error: { ...typography.error, color: colors.error, marginTop: spacing.xs },

@@ -51,3 +51,44 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   export --platform android` corre Metro y Babel y detecta imports rotos y errores de sintaxis. No cubre render, teclado, `onBlur`, ni el
   comportamiento de `KeyboardAvoidingView`; eso solo se ve en Expo Go o un development build.
 - **Archivos afectados:** Ninguno.
+
+## #005 · 2026-10-30 14:20 (UTC-5) · Validar mayoría de edad con DateTimePicker
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo valido que el conductor tenga al menos 18 años usando `@react-native-community/datetimepicker`, considerando que en Android abre
+  un diálogo y en iOS se renderiza inline?
+- **Respuesta:** Calcula la edad real, no solo la diferencia de años: resta los años y descuenta uno si el cumpleaños de este año aún no ha pasado
+  (comparando mes y día). Usa `maximumDate={new Date()}` para impedir fechas futuras e inicia el selector en hoy menos 18 años para no obligar a
+  scrollear décadas. En Android el componente funciona como diálogo: al montarlo se abre y `onChange` llega con `event.type` `'set'` o `'dismissed'`,
+  por lo que debes desmontarlo siempre y solo guardar la fecha cuando es `'set'`. En iOS con `display="spinner"` `onChange` se dispara en cada giro, así
+  que se guarda continuamente y se oculta al volver a pulsar el campo. Marca el campo como tocado al cerrar para mostrar el error.
+- **Archivos afectados:** `src/components/DateField.js`, `src/utils/validators.js`, `src/utils/formatters.js`.
+
+## #006 · 2026-10-30 14:50 (UTC-5) · Foto de perfil con expo-image-picker y permisos
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo implemento la foto de perfil obligatoria desde cámara o galería con `expo-image-picker` en SDK 58, y cómo manejo el permiso denegado
+  sin usar `Alert` para el error?
+- **Respuesta:** En SDK 58 `mediaTypes` es un arreglo de strings (`['images']`), no el enum `MediaTypeOptions` antiguo. Para la cámara llama a
+  `requestCameraPermissionsAsync()` y, si `granted` es falso, muestra el mensaje bajo el avatar en lugar de abrir un `Alert`. La galería usa el selector
+  del sistema y no requiere permiso de lectura. Con `allowsEditing: true`, `aspect: [1, 1]` y `quality: 0.7` obtienes un recorte cuadrado y una imagen
+  ligera. El resultado trae `canceled` y `assets[0].uri`; solo guarda la URI si no se canceló. El `Alert` se reserva para elegir el origen (cámara o
+  galería). La URI es local: subirla a Cloudinary y guardar la URL en Firestore queda como paso posterior. Los textos de permisos se declaran en el
+  plugin `expo-image-picker` de `app.json`.
+- **Archivos afectados:** `src/components/PhotoPicker.js`, `src/utils/validators.js`.
+
+## #007 · 2026-10-30 15:25 (UTC-5) · Tema visual estilo Uber con tokens reutilizables
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo aproximo el lenguaje visual de Uber (negro y blanco, inputs grises, botón negro) con `StyleSheet` y sin librerías de UI, de forma que
+  luego lo reutilicen las otras pestañas?
+- **Respuesta:** Centraliza todo en `theme/index.js`: negro `#000` como color primario y de texto, gris `#F3F3F3` para la superficie de los inputs,
+  rojo `#E11900` para errores y un gris `#E2E2E2` para el estado deshabilitado. Los campos son rellenos y sin borde (borde de 2 px del mismo color
+  que el fondo para que no cambie el tamaño al marcar error). Los botones son negros de 56 px de alto, y el selector segmentado marca la opción
+  activa en negro. Un indicador de tres barras ("Paso 1 de 3") refleja el flujo de registro. Cada control es un componente aislado (`FormField`,
+  `SelectField`, `DateField`, `SegmentedControl`, `PrimaryButton`) que lee solo del tema. Uber usa una tipografía propia no disponible aquí, así que se
+  usa la fuente del sistema en peso 600/700.
+- **Archivos afectados:** `src/theme/index.js`, `src/components/*`, `src/screens/PersonalDataScreen.js`.
