@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "CloneUberConductor",
+    "slug": "clone-uber-conductor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.virtualllantas.cloneuber"
+    },
+    "android": {
+      "package": "com.virtualllantas.cloneuber",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-web-browser",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        { "locationWhenInUsePermission": "Necesitamos tu ubicación para mostrarte en el mapa y recibir solicitudes de viaje." }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Necesitamos acceder a tus fotos para cargar tu perfil, vehículo y documentos.",
+          "cameraPermission": "Necesitamos la cámara para tomar las fotos de tu perfil, vehículo y documentos."
+        }
+      ],
+      "expo-notifications"
+    ]
+  }
+}
