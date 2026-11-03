@@ -81,3 +81,30 @@ export function validateVehicleText(value) {
   if (text.length > VEHICLE_TEXT_MAX) return 'Máximo 30 caracteres';
   return '';
 }
+
+// AI-assisted: see BITACORA.md #009
+const XL_MIN_CAPACITY = 6;
+
+export function validateYear(value) {
+  if (!value) return REQUIRED;
+  if (!/^\d{4}$/.test(value)) return 'Debe tener 4 dígitos';
+  if (Number(value) > new Date().getFullYear()) return 'No puede ser mayor al año actual';
+  return '';
+}
+
+export function validateColor(value) {
+  return value ? '' : 'Selecciona un color';
+}
+
+export function validateCapacity(value, form = {}) {
+  if (!value) return REQUIRED;
+  if (!/^\d+$/.test(value)) return 'Solo números';
+  const capacity = Number(value);
+  if (capacity < 1) return 'Debe ser al menos 1 pasajero';
+  if (form.category === 'xl' && capacity < XL_MIN_CAPACITY) return 'La categoría XL exige mínimo 6 pasajeros';
+  return '';
+}
+
+export function validateVehiclePhoto(value) {
+  return value ? '' : 'La foto del vehículo es obligatoria';
+}

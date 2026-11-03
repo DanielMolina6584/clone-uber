@@ -2,22 +2,45 @@ import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FormField from '../components/FormField';
+import PhotoPicker from '../components/PhotoPicker';
 import PrimaryButton from '../components/PrimaryButton';
 import RegistrationHeader from '../components/RegistrationHeader';
 import SelectField from '../components/SelectField';
-import { VEHICLE_CATEGORIES } from '../data/options';
+import { VEHICLE_CATEGORIES, VEHICLE_COLORS } from '../data/options';
 import { colors, spacing } from '../theme';
-import { normalizePlate, validateCategory, validatePlate, validateVehicleText } from '../utils/validators';
+import {
+  normalizePlate,
+  validateCapacity,
+  validateCategory,
+  validateColor,
+  validatePlate,
+  validateVehiclePhoto,
+  validateVehicleText,
+  validateYear,
+} from '../utils/validators';
 
-// Mitad pendiente: year, color, capacity (XL exige mínimo 6) y vehiclePhotoUri
+// AI-assisted: see BITACORA.md #009
 const validators = {
   category: validateCategory,
   plate: validatePlate,
   brand: validateVehicleText,
   model: validateVehicleText,
+  year: validateYear,
+  color: validateColor,
+  capacity: validateCapacity,
+  vehiclePhotoUri: validateVehiclePhoto,
 };
 
-const INITIAL_FORM = { category: '', plate: '', brand: '', model: '' };
+const INITIAL_FORM = {
+  category: '',
+  plate: '',
+  brand: '',
+  model: '',
+  year: '',
+  color: '',
+  capacity: '',
+  vehiclePhotoUri: '',
+};
 
 export default function VehicleScreen({ onContinue, onBack }) {
   const [form, setForm] = useState(INITIAL_FORM);
@@ -25,10 +48,11 @@ export default function VehicleScreen({ onContinue, onBack }) {
 
   const setField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const touch = (field) => setTouched((prev) => ({ ...prev, [field]: true }));
-  const errorOf = (field) => (touched[field] ? validators[field](form[field]) : '');
+  const errorOf = (field) => (touched[field] ? validators[field](form[field], form) : '');
+  const onlyDigits = (value) => value.replace(/\D/g, '');
 
   const isValid = useMemo(
-    () => Object.keys(validators).every((field) => !validators[field](form[field])),
+    () => Object.keys(validators).every((field) => !validators[field](form[field], form)),
     [form]
   );
 
@@ -40,6 +64,8 @@ export default function VehicleScreen({ onContinue, onBack }) {
         plate: normalizePlate(form.plate),
         brand: form.brand.trim(),
         model: form.model.trim(),
+        year: Number(form.year),
+        capacity: Number(form.capacity),
       });
     }
   };
@@ -94,6 +120,48 @@ export default function VehicleScreen({ onContinue, onBack }) {
             error={errorOf('model')}
             maxLength={30}
             autoCapitalize="words"
+          />
+          <FormField
+            label="Año"
+            value={form.year}
+            onChangeText={(v) => setField('year', onlyDigits(v))}
+            onBlur={() => touch('year')}
+            error={errorOf('year')}
+            placeholder="AAAA"
+            keyboardType="numeric"
+            maxLength={4}
+          />
+          <SelectField
+            label="Color"
+            value={form.color}
+            options={VEHICLE_COLORS}
+            onChange={(v) => {
+              setField('color', v);
+              touch('color');
+            }}
+            error={errorOf('color')}
+            placeholder="Selecciona un color"
+          />
+          <FormField
+            label="Capacidad de pasajeros"
+            value={form.capacity}
+            onChangeText={(v) => setField('capacity', onlyDigits(v))}
+            onBlur={() => touch('capacity')}
+            error={errorOf('capacity')}
+            placeholder={form.category === 'xl' ? 'Mínimo 6' : undefined}
+            keyboardType="numeric"
+            maxLength={2}
+          />
+          <PhotoPicker
+            variant="card"
+            title="Foto del vehículo"
+            label="Toma una foto donde se vea la placa"
+            uri={form.vehiclePhotoUri}
+            onChange={(uri) => {
+              setField('vehiclePhotoUri', uri);
+              touch('vehiclePhotoUri');
+            }}
+            error={errorOf('vehiclePhotoUri')}
           />
 
           <View style={styles.footer}>
