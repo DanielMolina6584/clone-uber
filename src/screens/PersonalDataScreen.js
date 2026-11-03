@@ -5,11 +5,12 @@ import DateField from '../components/DateField';
 import FormField from '../components/FormField';
 import PhotoPicker from '../components/PhotoPicker';
 import PrimaryButton from '../components/PrimaryButton';
+import RegistrationHeader from '../components/RegistrationHeader';
 import SegmentedControl from '../components/SegmentedControl';
 import SelectField from '../components/SelectField';
 import { GENDERS, LANGUAGES } from '../data/options';
 import { getLanguage, saveLanguage } from '../services/preferences';
-import { colors, radius, spacing, typography } from '../theme';
+import { colors, spacing } from '../theme';
 import {
   validateBirthDate,
   validateEmail,
@@ -76,17 +77,14 @@ export default function PersonalDataScreen({ onContinue }) {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.steps}>
-            <View style={[styles.step, styles.stepActive]} />
-            <View style={styles.step} />
-            <View style={styles.step} />
-          </View>
-          <Text style={styles.stepLabel}>Paso 1 de 3</Text>
-          <Text style={styles.title}>Datos personales</Text>
-          <Text style={styles.subtitle}>Cuéntanos quién eres para empezar a conducir.</Text>
+          <RegistrationHeader
+            step={1}
+            title="Datos personales"
+            subtitle="Cuéntanos quién eres para empezar a conducir."
+          />
 
           <PhotoPicker
             label="Agregar foto de perfil"
@@ -175,11 +173,5 @@ export default function PersonalDataScreen({ onContinue }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.fondo },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
-  steps: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.sm },
-  step: { flex: 1, height: 4, borderRadius: radius.pill, backgroundColor: colors.borde },
-  stepActive: { backgroundColor: colors.primario },
-  stepLabel: { ...typography.etiqueta, color: colors.textoSecundario, marginBottom: spacing.md },
-  title: { ...typography.titulo, color: colors.texto },
-  subtitle: { ...typography.subtitulo, color: colors.textoSecundario, marginTop: spacing.sm, marginBottom: spacing.lg },
   footer: { marginTop: spacing.md },
 });

@@ -9,3 +9,9 @@ export const LANGUAGES = [
   { label: 'Español', value: 'es' },
   { label: 'English', value: 'en' },
 ];
+
+export const VEHICLE_CATEGORIES = [
+  { label: 'Económico', value: 'economy' },
+  { label: 'XL', value: 'xl' },
+  { label: 'Premium', value: 'premium' },
+];

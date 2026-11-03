@@ -57,3 +57,27 @@ export function validateLanguage(value) {
 export function validatePhoto(value) {
   return value ? '' : 'La foto de perfil es obligatoria';
 }
+
+const VEHICLE_TEXT_MAX = 30;
+
+export function validateCategory(value) {
+  return value ? '' : 'Selecciona una categoría';
+}
+
+export function normalizePlate(value) {
+  return value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+}
+
+export function validatePlate(value) {
+  const plate = normalizePlate(value);
+  if (!plate) return REQUIRED;
+  if (!/^[A-Z]{3}\d{3}$/.test(plate)) return 'Formato inválido, usa ABC123';
+  return '';
+}
+
+export function validateVehicleText(value) {
+  const text = value.trim();
+  if (!text) return REQUIRED;
+  if (text.length > VEHICLE_TEXT_MAX) return 'Máximo 30 caracteres';
+  return '';
+}
