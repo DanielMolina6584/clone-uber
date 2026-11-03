@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../theme';
 import { formatDate } from '../utils/formatters';
 
-export default function DateField({ label, value, onChange, onClose, error, maximumDate, initialDate }) {
+export default function DateField({ label, value, onChange, onClose, error, maximumDate, minimumDate, initialDate }) {
   const [open, setOpen] = useState(false);
 
   const close = () => {
@@ -41,6 +41,7 @@ export default function DateField({ label, value, onChange, onClose, error, maxi
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           maximumDate={maximumDate}
+          minimumDate={minimumDate}
           onChange={handleChange}
         />
       ) : null}

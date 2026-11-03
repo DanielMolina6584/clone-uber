@@ -108,3 +108,35 @@ export function validateCapacity(value, form = {}) {
 export function validateVehiclePhoto(value) {
   return value ? '' : 'La foto del vehículo es obligatoria';
 }
+
+// AI-assisted: see BITACORA.md #010
+// Particulares nuevos: primera revisión técnico-mecánica al sexto año de matrícula (Decreto 019 de 2012, art. 202).
+export const TECH_INSPECTION_EXEMPT_YEARS = 6;
+
+export function isTechInspectionRequired(vehicleYear, today = new Date()) {
+  if (!vehicleYear) return true;
+  return today.getFullYear() - Number(vehicleYear) >= TECH_INSPECTION_EXEMPT_YEARS;
+}
+
+export function validateLicenseNumber(value) {
+  if (!value) return REQUIRED;
+  if (!/^\d+$/.test(value)) return 'Solo números';
+  if (value.length < 6 || value.length > 10) return 'Debe tener entre 6 y 10 dígitos';
+  return '';
+}
+
+export function validateExpiryDate(value, today = new Date()) {
+  if (!value) return REQUIRED;
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const expiry = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  if (expiry <= startOfToday) return 'Debe ser posterior a hoy';
+  return '';
+}
+
+export function validateDocumentPhoto(value) {
+  return value ? '' : 'La foto del documento es obligatoria';
+}
+
+export function validateTerms(value) {
+  return value ? '' : 'Debes aceptar los términos para continuar';
+}
