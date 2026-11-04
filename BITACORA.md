@@ -104,3 +104,52 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   y guarda en el `onChange` del selector. Se usa una clave con prefijo (`@driver_language`) y solo se guarda el idioma, nunca datos sensibles, como pide
   el PDF para AsyncStorage.
 - **Archivos afectados:** `src/services/preferences.js`, `src/screens/PersonalDataScreen.js`.
+
+## #009 · 2026-11-03 10:17 (UTC-5) · Completar la pestaña Vehículo: año, color, capacidad y foto
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Pregunta:** La pestaña Vehículo ya tiene categoría, placa, marca y modelo. ¿Cómo termino los campos que faltan según el PDF (año de 4 dígitos no
+  mayor al actual, color en lista, capacidad numérica donde XL exige mínimo 6 y foto obligatoria del vehículo donde se vea la placa) reutilizando
+  los componentes que ya existen?
+- **Respuesta:** Las reglas nuevas van como funciones puras en `validators.js` (`validateYear`, `validateColor`, `validateCapacity`,
+  `validateVehiclePhoto`). Como la capacidad depende de la categoría, los validadores reciben `(value, form)`; así, si el conductor cambia a XL, el error
+  de capacidad aparece sin lógica extra porque se deriva en render. Año y capacidad se sanean con `replace(/\D/g, '')` y se entregan como `Number` al
+  continuar. Los colores viven en `data/options.js`. `PhotoPicker` recibe `variant="card"` (rectángulo 4:3) y `title` para reutilizarlo con el vehículo
+  y los documentos sin duplicar la lógica de permisos.
+  Verificación: casos de borde de los validadores ejecutados con Node (año vacío, de 3 dígitos, futuro; XL con 5 y 6; capacidad 0) y
+  `npx expo export --platform android` sin errores. No probado aún en dispositivo.
+- **Archivos afectados:** `src/data/options.js`, `src/utils/validators.js`, `src/components/PhotoPicker.js`, `src/screens/VehicleScreen.js`.
+- **Commit:** b51f15c
+
+## #010 · 2026-11-03 11:21 (UTC-5) · Pestaña Documentos y pagos
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Pregunta:** ¿Cómo armo la pestaña 3 con licencia (número, foto y vencimiento), SOAT (foto y vencimiento), revisión técnico-mecánica solo si
+  aplica según el año del vehículo, correo de Mercado Pago y el checkbox de términos con el porcentaje de comisión visible?
+- **Respuesta:** Se crea `src/config/pricing.js` con los valores de la sección 5 del PDF y el checkbox lee de ahí el 20 %, para no escribirlo a mano.
+  Los vencimientos usan `validateExpiryDate`, que compara solo la fecha (sin hora) y exige que sea posterior a hoy; el `DateField` ahora acepta
+  `minimumDate` (mañana). La técnico-mecánica se exige si el vehículo tiene 6 años o más (`isTechInspectionRequired`, Decreto 019 de 2012 para
+  particulares); si no aplica, los campos se ocultan y salen del mapa de validadores con `useMemo`. Se agrega `CheckboxField` con
+  `accessibilityRole="checkbox"`. `RegistrationTabs` guarda los datos de cada paso para pasarle el año del vehículo a la pestaña 3.
+  Verificación: vencimientos hoy/ayer/mañana, técnico-mecánica 2020/2021 y número de licencia probados con Node.
+- **Archivos afectados:** `src/config/pricing.js`, `src/utils/validators.js`, `src/components/DateField.js`, `src/components/CheckboxField.js`,
+  `src/screens/DocumentsScreen.js`, `src/navigation/RegistrationTabs.js`.
+- **Commit:** 08a4eb7
+
+## #011 · 2026-11-03 12:40 (UTC-5) · Envío del registro y estado Pendiente de aprobación
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Pregunta:** Al pulsar "Enviar registro", ¿cómo subo las fotos y guardo al conductor en Firestore con estado Pendiente de aprobación, sin poner
+  llaves secretas en la app y mostrando el error sin `Alert`?
+- **Respuesta:** Las fotos se suben a Cloudinary con un *upload preset* sin firma (`services/cloudinary.js`), así la app solo usa
+  `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` y `EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET` y nunca la API secret. `services/drivers.js` sube las cinco fotos en
+  paralelo, reemplaza las URI locales por URL y crea el documento en `drivers` con `status: 'pending_approval'` y `createdAt: serverTimestamp()`;
+  para aprobar se cambia el campo a `approved` en la consola. El botón se deshabilita mientras envía y el error se muestra debajo del botón. Al
+  terminar se muestra `PendingApprovalScreen`. El `commissionRate` aceptado queda guardado con los documentos.
+  Verificación: `npx expo export --platform android` sin errores. Falta probar contra un proyecto real de Firebase y Cloudinary con `.env`.
+- **Archivos afectados:** `src/services/cloudinary.js`, `src/services/drivers.js`, `src/screens/PendingApprovalScreen.js`,
+  `src/navigation/RegistrationTabs.js`.
+- **Commit:** facd995
