@@ -153,3 +153,17 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
 - **Archivos afectados:** `src/services/cloudinary.js`, `src/services/drivers.js`, `src/screens/PendingApprovalScreen.js`,
   `src/navigation/RegistrationTabs.js`.
 - **Commit:** facd995
+
+## #012 · 2026-11-06 08:13 (UTC-5) · Guardar el registro en Firestore sin subir imágenes a Cloudinary
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** El PDF solo recomienda Cloudinary (sección 7), no lo exige. ¿Cómo guardo las fotos del registro en Firestore de la forma más simple, sin
+  gestionar un servicio de imágenes?
+- **Respuesta:** Elimina la subida y guarda en el documento de `drivers` lo que ya devuelve `expo-image-picker`: la URI de cada foto (`photoUri`,
+  `vehiclePhotoUri`, `licensePhotoUri`, `soatPhotoUri`, `techInspectionPhotoUri`). `submitDriverRegistration` queda en un solo `addDoc` con
+  `personal`, `vehicle`, `documents`, `status: 'pending_approval'` y `createdAt: serverTimestamp()`. Limitación: son rutas locales (`file://...`) que solo
+  existen en el teléfono que tomó la foto, así que el panel de aprobación no podrá mostrar las imágenes; sirven para la práctica, no para producción.
+  Para producción hay que subir los archivos a un almacenamiento (Cloudinary o Firebase Storage) y guardar su URL pública. No conviene guardar las
+  imágenes en base64 dentro de Firestore: cada documento tiene un límite de 1 MiB.
+- **Archivos afectados:** `src/services/drivers.js`, `src/services/cloudinary.js` (eliminado), `.env.example`.
