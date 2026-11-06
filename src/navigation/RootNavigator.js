@@ -3,7 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSession } from '../context/SessionContext';
 import LoginScreen from '../screens/LoginScreen';
 import PendingApprovalScreen from '../screens/PendingApprovalScreen';
+import { DRIVER_STATUS } from '../services/drivers';
 import { colors } from '../theme';
+import AppDrawer from './AppDrawer';
 import RegistrationTabs from './RegistrationTabs';
 
 const Stack = createNativeStackNavigator();
@@ -18,6 +20,8 @@ export default function RootNavigator() {
       </View>
     );
   }
+
+  if (driverId && driver?.status === DRIVER_STATUS.approved) return <AppDrawer />;
 
   if (driverId && driver) {
     return <PendingApprovalScreen name={driver.personal?.fullName?.split(' ')[0]} status={driver.status} onSignOut={endSession} />;
