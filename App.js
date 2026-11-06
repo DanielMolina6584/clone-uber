@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import RegistrationTabs from './src/navigation/RegistrationTabs';
+import { SessionProvider } from './src/context/SessionContext';
+import RootNavigator from './src/navigation/RootNavigator';
 import { colors } from './src/theme';
 
 const navigationTheme = {
@@ -12,9 +13,11 @@ const navigationTheme = {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
-        <RegistrationTabs />
-      </NavigationContainer>
+      <SessionProvider>
+        <NavigationContainer theme={navigationTheme}>
+          <RootNavigator />
+        </NavigationContainer>
+      </SessionProvider>
       <StatusBar style="dark" />
     </SafeAreaProvider>
   );

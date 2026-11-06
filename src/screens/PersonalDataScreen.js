@@ -10,7 +10,7 @@ import SegmentedControl from '../components/SegmentedControl';
 import SelectField from '../components/SelectField';
 import { GENDERS, LANGUAGES } from '../data/options';
 import { getLanguage, saveLanguage } from '../services/preferences';
-import { colors, spacing } from '../theme';
+import { colors, spacing, typography } from '../theme';
 import {
   validateBirthDate,
   validateEmail,
@@ -47,7 +47,7 @@ const INITIAL_FORM = {
 const today = new Date();
 const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
 
-export default function PersonalDataScreen({ onContinue }) {
+export default function PersonalDataScreen({ onContinue, onLogin }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [touched, setTouched] = useState({});
 
@@ -163,6 +163,11 @@ export default function PersonalDataScreen({ onContinue }) {
 
           <View style={styles.footer}>
             <PrimaryButton title="Continuar" onPress={handleContinue} disabled={!isValid} />
+            {onLogin ? (
+              <Text style={styles.link} onPress={onLogin} accessibilityRole="link">
+                Ya tengo cuenta
+              </Text>
+            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -174,4 +179,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.fondo },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
   footer: { marginTop: spacing.md },
+  link: { ...typography.etiqueta, color: colors.texto, textAlign: 'center', textDecorationLine: 'underline', marginTop: spacing.md },
 });

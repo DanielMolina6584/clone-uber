@@ -167,3 +167,17 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   Para producción hay que subir los archivos a un almacenamiento (Cloudinary o Firebase Storage) y guardar su URL pública. No conviene guardar las
   imágenes en base64 dentro de Firestore: cada documento tiene un límite de 1 MiB.
 - **Archivos afectados:** `src/services/drivers.js`, `src/services/cloudinary.js` (eliminado), `.env.example`.
+
+## #013 · 2026-11-06 12:48 (UTC-5) · "Ya tengo cuenta": iniciar sesión sin Firebase Auth
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** El conductor ya queda registrado en Firestore, pero si cierra la app o cambia de teléfono no puede volver a entrar. ¿Cómo agrego un "Ya tengo cuenta" sin usar Firebase Auth?
+- **Respuesta:** Sin Authentication hace falta algo que haga de "usuario". Como el documento de identidad ya se pide en el registro, se busca el conductor con
+  `where('personal.idNumber', '==', idNumber)` (un `getDocs` con `limit(1)`) y se guarda su id de documento como sesión en AsyncStorage. Un
+  `SessionContext` restaura esa sesión al abrir la app y escucha el documento con `onSnapshot`, por lo que el estado (Pendiente de aprobación o Aprobado) se
+  actualiza solo; si el documento ya no existe, se limpia la sesión. Tras enviar el registro también se inicia sesión con el id devuelto por `addDoc`, en
+  lugar de un estado local `submitted`. La navegación raíz decide entre dos casos: sin sesión, un Stack con Registro y Login; con sesión, la pantalla de
+  estado con "Cerrar sesión". Límite importante: cualquiera que conozca un documento de identidad entra a esa cuenta, y la consulta exige que las reglas de
+  Firestore permitan leer `drivers`; para producción hay que pasar a Firebase Auth. En iOS la consulta por un campo anidado no necesita índice.
+- **Archivos afectados:** `App.js`, `src/context/SessionContext.js`, `src/navigation/RootNavigator.js`, `src/navigation/RegistrationTabs.js`, `src/screens/LoginScreen.js`, `src/screens/PendingApprovalScreen.js`, `src/screens/PersonalDataScreen.js`, `src/components/PrimaryButton.js`, `src/services/drivers.js`, `src/services/preferences.js`.
