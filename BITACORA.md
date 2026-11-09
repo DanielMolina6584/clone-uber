@@ -181,3 +181,42 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   estado con "Cerrar sesión". Límite importante: cualquiera que conozca un documento de identidad entra a esa cuenta, y la consulta exige que las reglas de
   Firestore permitan leer `drivers`; para producción hay que pasar a Firebase Auth. En iOS la consulta por un campo anidado no necesita índice.
 - **Archivos afectados:** `App.js`, `src/context/SessionContext.js`, `src/navigation/RootNavigator.js`, `src/navigation/RegistrationTabs.js`, `src/screens/LoginScreen.js`, `src/screens/PendingApprovalScreen.js`, `src/screens/PersonalDataScreen.js`, `src/components/PrimaryButton.js`, `src/services/drivers.js`, `src/services/preferences.js`.
+
+## #014 · 2026-11-09 15:54 (UTC-5) · Drawer y pantalla de mapa al aprobarse el conductor
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Cuando la cuenta pasa a Aprobado, ¿cómo cambio de la pantalla de estado a una app con menú lateral y un mapa, sin romper el flujo de registro?
+- **Respuesta:** En `RootNavigator`, si hay sesión y `driver.status === 'approved'` se devuelve un `AppDrawer`; si sigue pendiente se mantiene
+  `PendingApprovalScreen`. Como el estado llega por `onSnapshot`, el cambio ocurre solo cuando alguien aprueba el documento. El Drawer usa
+  `drawerContent` propio: nombre del conductor, `DrawerItemList` y un `DrawerItem` "Cerrar sesión" que llama a `endSession`. La pantalla Inicio es
+  `MapScreen` con `MapView` de `react-native-maps` centrado en Bogotá. En iOS usa Apple Maps y no necesita llave; en Android el mapa requeriría llave de
+  Google. `react-native-maps` no funciona completo en Expo Go: hace falta un development build.
+- **Archivos afectados:** `src/navigation/AppDrawer.js`, `src/screens/MapScreen.js`, `src/navigation/RootNavigator.js`.
+
+## #015 · 2026-11-09 15:54 (UTC-5) · Escuchar solicitudes de viaje y mostrar la tarjeta con temporizador
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo escucho en tiempo real los viajes en estado `requested`, muestro una tarjeta con 15 segundos para decidir y evito que dos conductores acepten el mismo viaje?
+- **Respuesta:** `useTripRequests` abre un `onSnapshot` sobre `trips` con `where('status', '==', 'requested')`, solo mientras `enabled`, y limpia la
+  suscripción al desmontar. Filtra en el cliente las solicitudes que ya tienen `driverId`, las que este conductor rechazó (`rejectedBy`) y las de más de 10
+  minutos, y devuelve la más antigua. `TripRequestCard` calcula el tiempo restante contra una hora límite (`Date.now()`) en vez de restar de uno en uno, así
+  no se desfasa si la app queda en segundo plano; al llegar a cero rechaza sola. Aceptar usa `runTransaction`: lee el viaje y solo escribe `driverId` y
+  `accepted` si sigue en `requested` y sin conductor; si otro se adelantó lanza `trip-taken`. Rechazar no cambia el estado: agrega el id con `arrayUnion` a
+  `rejectedBy`, para que el viaje siga visible a los demás. La tarjeta muestra `fare` y `driverEarnings` que escribe el pasajero. Las reglas de
+  Firestore deben permitir leer y actualizar `trips`.
+- **Archivos afectados:** `src/services/trips.js`, `src/hooks/useTripRequests.js`, `src/components/TripRequestCard.js`, `src/config/app.js`, `src/utils/formatters.js`, `src/screens/MapScreen.js`.
+
+## #016 · 2026-11-09 15:54 (UTC-5) · Función única para calcular la tarifa y la comisión
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo calculo la tarifa, la comisión del 20 % y la ganancia neta en una sola función pura, de forma que la estimación y el cierre del viaje den siempre el mismo resultado?
+- **Respuesta:** `calculateFare({ distanceKm, durationMin, category, tip })` en `src/utils/calculateFare.js`, sin React ni Firebase. Toma todos los valores
+  de `src/config/pricing.js`: `base + distancia x km + duración x min`, multiplicado por la categoría (economy 1.0, xl 1.4, premium 1.8) y con mínimo de
+  $ 6.000. La tarifa se redondea al múltiplo de 100 COP más cercano ANTES de calcular la comisión (`Math.round(fare x 0.2)`), y la propina se suma
+  completa a la ganancia: `driverEarnings = fare - commission + tip`. Una categoría desconocida lanza un error en lugar de devolver NaN, y la propina
+  negativa se trata como 0. Ejemplo (10 km, 20 min, economy): 3.500 + 12.000 + 5.000 = 20.500; comisión 4.100; neto 16.400. Verificado con pruebas en
+  Node (neto, propina, tarifa mínima, categoría XL y categoría inválida). Cada viaje debe guardar además el `commissionRate` usado.
+- **Archivos afectados:** `src/utils/calculateFare.js` (nuevo); `src/config/pricing.js` es la fuente de los valores y no cambia.
