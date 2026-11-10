@@ -220,3 +220,17 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   negativa se trata como 0. Ejemplo (10 km, 20 min, economy): 3.500 + 12.000 + 5.000 = 20.500; comisión 4.100; neto 16.400. Verificado con pruebas en
   Node (neto, propina, tarifa mínima, categoría XL y categoría inválida). Cada viaje debe guardar además el `commissionRate` usado.
 - **Archivos afectados:** `src/utils/calculateFare.js` (nuevo); `src/config/pricing.js` es la fuente de los valores y no cambia.
+
+## #017 · 2026-11-09 16:26 (UTC-5) · Seguir la ubicación del conductor en el mapa
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo pido el permiso de ubicación, sigo la posición del conductor en tiempo real y hago que el mapa lo acompañe sin dejar suscripciones abiertas?
+- **Respuesta:** El hook `useDriverLocation` llama a `Location.requestForegroundPermissionsAsync()` y, si el permiso se concede, abre
+  `Location.watchPositionAsync` con precisión `Balanced`, cada 4 s y al menos 5 m de movimiento. Guarda `{ lat, lng, heading }` (el rumbo vale -1 cuando el
+  dispositivo no lo conoce, por eso se normaliza a 0). Como la suscripción se obtiene de forma asíncrona, el `useEffect` usa una bandera `active`: si el
+  componente se desmonta antes de que `watchPositionAsync` responda, la suscripción recién creada se cancela en el acto; si no, se cancela en la función de
+  limpieza. `MapScreen` usa `animateToRegion` desde un ref cuando cambia la posición y activa `showsUserLocation`; si el permiso se niega muestra un aviso
+  rojo en lugar de `Alert`. Todavía no se escribe nada en Firestore (eso llega con el botón Disponible). En iOS el permiso ya está declarado en
+  `app.json` con el plugin de `expo-location`.
+- **Archivos afectados:** `src/hooks/useDriverLocation.js`, `src/screens/MapScreen.js`, `src/config/app.js`.
