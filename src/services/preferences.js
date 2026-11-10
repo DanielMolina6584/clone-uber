@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LANGUAGE_KEY = '@driver_language';
 const SESSION_KEY = '@driver_session_id';
+const AVAILABILITY_KEY = '@driver_available';
 
 export async function getLanguage() {
   try {
@@ -40,5 +41,21 @@ export async function clearSession() {
     await AsyncStorage.removeItem(SESSION_KEY);
   } catch {
     // Nada que limpiar si el almacenamiento no responde
+  }
+}
+
+export async function getAvailability() {
+  try {
+    return (await AsyncStorage.getItem(AVAILABILITY_KEY)) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export async function saveAvailability(isAvailable) {
+  try {
+    await AsyncStorage.setItem(AVAILABILITY_KEY, String(isAvailable));
+  } catch {
+    // Solo recuerda el último estado: si falla, el conductor inicia como No disponible
   }
 }

@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDocs, limit, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, limit, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { db } from './firebase';
 
 export const DRIVER_STATUS = { pending: 'pending_approval', approved: 'approved' };
@@ -26,4 +26,13 @@ export function subscribeDriver(driverId, onData, onError) {
 export async function findDriverByIdNumber(idNumber) {
   const snapshot = await getDocs(query(collection(db, 'drivers'), where('personal.idNumber', '==', idNumber), limit(1)));
   return snapshot.empty ? null : snapshot.docs[0].id;
+}
+
+export function setDriverAvailability(driverId, isAvailable) {
+  return updateDoc(doc(db, 'drivers', driverId), { isAvailable });
+}
+
+// La app del pasajero escucha este documento para ver al conductor
+export function updateDriverLocation(driverId, { lat, lng, heading }) {
+  return updateDoc(doc(db, 'drivers', driverId), { location: { lat, lng, heading }, locationUpdatedAt: serverTimestamp() });
 }

@@ -234,3 +234,19 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   rojo en lugar de `Alert`. Todavía no se escribe nada en Firestore (eso llega con el botón Disponible). En iOS el permiso ya está declarado en
   `app.json` con el plugin de `expo-location`.
 - **Archivos afectados:** `src/hooks/useDriverLocation.js`, `src/screens/MapScreen.js`, `src/config/app.js`.
+
+## #018 · 2026-11-10 11:12 (UTC-5) · Botón Disponible/No disponible solo para cuentas aprobadas
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo agrego un interruptor Disponible/No disponible que solo se pueda activar con la cuenta aprobada, que recuerde el último estado y que controle cuándo se escuchan solicitudes y se publica la ubicación?
+- **Respuesta:** `AvailabilityToggle` es un componente de presentación (pastilla con `Switch`) que se deshabilita cuando `isApproved` es falso y muestra
+  el motivo debajo. `MapScreen` guarda `available` en estado y calcula `working = isApproved && available`; esa bandera alimenta
+  `useTripRequests({ enabled: working })` y `useDriverLocation({ publish: working })`, así que fuera de Disponible no hay `onSnapshot` sobre `trips` ni
+  escrituras de posición. Al cambiar el interruptor se actualiza la interfaz de inmediato y luego se escribe `isAvailable` con `updateDoc`; si la escritura
+  falla se revierte el interruptor y se muestra un error bajo la pastilla. El último estado se guarda en AsyncStorage (`@driver_available`) y al abrir el
+  mapa se restaura y se vuelve a escribir en Firestore, porque la app pudo cerrarse estando Disponible. `useDriverLocation` escribe
+  `location: { lat, lng, heading }` y `locationUpdatedAt` como máximo una vez por intervalo (4 s) mientras `publish` sea verdadero. Límite: si la app se cierra
+  a la fuerza, `isAvailable` queda en `true` en Firestore hasta que el conductor la vuelva a abrir. Las reglas de Firestore deben permitir actualizar
+  `drivers`. AsyncStorage solo guarda una preferencia, no datos sensibles.
+- **Archivos afectados:** `src/components/AvailabilityToggle.js`, `src/screens/MapScreen.js`, `src/hooks/useDriverLocation.js`, `src/services/drivers.js`, `src/services/preferences.js`.

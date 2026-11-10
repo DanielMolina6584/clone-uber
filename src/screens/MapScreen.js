@@ -2,24 +2,58 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import MapView from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AvailabilityToggle from '../components/AvailabilityToggle';
 import TripRequestCard from '../components/TripRequestCard';
 import { useSession } from '../context/SessionContext';
 import { useDriverLocation } from '../hooks/useDriverLocation';
 import { useTripRequests } from '../hooks/useTripRequests';
+import { setDriverAvailability } from '../services/drivers';
+import { getAvailability, saveAvailability } from '../services/preferences';
 import { acceptTrip, rejectTrip } from '../services/trips';
 import { colors, spacing, typography } from '../theme';
 
 const INITIAL_REGION = { latitude: 4.711, longitude: -74.0721, latitudeDelta: 0.02, longitudeDelta: 0.02 };
 
 export default function MapScreen() {
-  const { driverId } = useSession();
+  const { driverId, isApproved } = useSession();
   const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
-  const { location, error: locationError } = useDriverLocation();
-  // enabled pasará a depender del botón Disponible cuando exista
-  const { currentRequest } = useTripRequests({ driverId, enabled: true });
+  const [available, setAvailable] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState('');
+  const working = isApproved && available;
+  const { location, error: locationError } = useDriverLocation({ driverId, publish: working });
+  const { currentRequest } = useTripRequests({ driverId, enabled: working });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  // Recupera el último estado y lo sincroniza con Firestore (la app pudo cerrarse estando Disponible)
+  useEffect(() => {
+    let active = true;
+    getAvailability().then((stored) => {
+      if (!active || !stored || !isApproved) return;
+      setAvailable(true);
+      setDriverAvailability(driverId, true).catch((err) => console.warn('setDriverAvailability', err));
+    });
+    return () => {
+      active = false;
+    };
+  }, [driverId, isApproved]);
+
+  const handleToggle = useCallback(
+    async (next) => {
+      setAvailabilityError('');
+      setAvailable(next);
+      try {
+        await setDriverAvailability(driverId, next);
+        saveAvailability(next);
+      } catch (err) {
+        console.warn('setDriverAvailability', err);
+        setAvailable(!next);
+        setAvailabilityError('No pudimos cambiar tu disponibilidad. Revisa tu conexión.');
+      }
+    },
+    [driverId]
+  );
 
   // El mapa sigue al conductor cada vez que llega una posición nueva
   useEffect(() => {
@@ -64,8 +98,11 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <MapView ref={mapRef} style={styles.map} initialRegion={INITIAL_REGION} showsUserLocation showsMyLocationButton />
+      <View style={styles.toggleWrapper}>
+        <AvailabilityToggle available={available} onChange={handleToggle} disabled={!isApproved} error={availabilityError} />
+      </View>
       {locationError ? (
-        <View style={[styles.banner, { top: spacing.md }]}>
+        <View style={styles.banner}>
           <Text style={styles.bannerText}>{locationError}</Text>
         </View>
       ) : null}
@@ -81,7 +118,8 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  banner: { position: 'absolute', left: 16, right: 16, backgroundColor: colors.error, borderRadius: 8, padding: spacing.sm },
+  toggleWrapper: { position: 'absolute', top: spacing.md, left: 16, right: 16 },
+  banner: { position: 'absolute', top: 96, left: 16, right: 16, backgroundColor: colors.error, borderRadius: 8, padding: spacing.sm },
   bannerText: { ...typography.error, color: colors.textoPrimario, textAlign: 'center' },
   cardWrapper: { position: 'absolute', left: 16, right: 16 },
 });

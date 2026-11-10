@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import { APP_CONFIG } from '../config/app';
+import { updateDriverLocation } from '../services/drivers';
 
 const toPoint = (position) => ({
   lat: position.coords.latitude,
@@ -8,10 +9,12 @@ const toPoint = (position) => ({
   heading: position.coords.heading >= 0 ? position.coords.heading : 0,
 });
 
-// Pide el permiso y sigue la posición del conductor; al desmontar cancela la suscripción
-export function useDriverLocation({ intervalMs = APP_CONFIG.locationIntervalMs } = {}) {
+// Pide el permiso y sigue la posición del conductor; al desmontar cancela la suscripción.
+// Mientras `publish` sea true, escribe la posición en Firestore como máximo una vez por intervalo.
+export function useDriverLocation({ driverId, publish = false, intervalMs = APP_CONFIG.locationIntervalMs } = {}) {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState('');
+  const lastWrite = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -45,6 +48,14 @@ export function useDriverLocation({ intervalMs = APP_CONFIG.locationIntervalMs }
       subscription?.remove();
     };
   }, [intervalMs]);
+
+  useEffect(() => {
+    if (!publish || !driverId || !location) return;
+    const now = Date.now();
+    if (now - lastWrite.current < intervalMs) return;
+    lastWrite.current = now;
+    updateDriverLocation(driverId, location).catch((err) => console.warn('updateDriverLocation', err));
+  }, [publish, driverId, location, intervalMs]);
 
   return { location, error };
 }
