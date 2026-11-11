@@ -250,3 +250,17 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   a la fuerza, `isAvailable` queda en `true` en Firestore hasta que el conductor la vuelva a abrir. Las reglas de Firestore deben permitir actualizar
   `drivers`. AsyncStorage solo guarda una preferencia, no datos sensibles.
 - **Archivos afectados:** `src/components/AvailabilityToggle.js`, `src/screens/MapScreen.js`, `src/hooks/useDriverLocation.js`, `src/services/drivers.js`, `src/services/preferences.js`.
+
+## #019 · 2026-11-11 07:30 (UTC-5) · Pantalla de ganancias por periodo y saldo del conductor
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo muestro las ganancias netas del conductor de hoy, de la semana y del mes, con viajes, comisiones y propinas, sin recalcular todo en cada render?
+- **Respuesta:** `useEarnings` abre un `onSnapshot` sobre `trips` con `where('driverId', '==', driverId)` (un solo campo, sin índice compuesto) y lo cancela al
+  desmontar; el filtro por fechas se hace en el cliente. Con `useMemo` y dependencia `[trips]` calcula los tres resúmenes: `getPeriodRange` da el rango de cada
+  periodo (la semana empieza el lunes) y `summarizeTrips` suma viajes, total facturado, comisiones, propinas y ganancia neta, más el promedio por viaje. Solo
+  cuentan los viajes `completed` o `paid`, fechados por `completedAt` (o `createdAt` si falta). Un segundo `useMemo` calcula el saldo: los viajes pagados por
+  pasarela suman `driverEarnings` y los pagados en efectivo restan la comisión, porque el conductor ya cobró el dinero y debe a la plataforma su parte; por eso
+  el saldo puede quedar negativo. La pantalla es una entrada nueva del Drawer. Verificado con pruebas en Node (rangos de hoy, semana y mes, propinas, promedio,
+  saldo con efectivo y lista vacía). Las reglas de Firestore deben permitir leer `trips`.
+- **Archivos afectados:** `src/hooks/useEarnings.js`, `src/screens/EarningsScreen.js`, `src/components/InfoRow.js`, `src/utils/dates.js`, `src/utils/trips.js`, `src/services/trips.js`, `src/navigation/AppDrawer.js`.

@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '../context/SessionContext';
+import EarningsScreen from '../screens/EarningsScreen';
 import MapScreen from '../screens/MapScreen';
 import { colors, spacing, typography } from '../theme';
 
@@ -44,6 +45,11 @@ export default function AppDrawer() {
         name="Map"
         component={MapScreen}
         options={{ title: 'Inicio', drawerIcon: ({ color, size }) => <Ionicons name="car-outline" size={size} color={color} /> }}
+      />
+      <Drawer.Screen
+        name="Earnings"
+        component={EarningsScreen}
+        options={{ title: 'Ganancias', drawerIcon: ({ color, size }) => <Ionicons name="cash-outline" size={size} color={color} /> }}
       />
     </Drawer.Navigator>
   );

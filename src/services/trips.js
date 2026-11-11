@@ -8,6 +8,15 @@ export const TRIP_STATUS = {
 
 const tripRef = (tripId) => doc(db, 'trips', tripId);
 
+// Una sola consulta por driverId; el filtrado por fechas se hace en el cliente
+export function subscribeDriverTrips(driverId, onData, onError) {
+  return onSnapshot(
+    query(collection(db, 'trips'), where('driverId', '==', driverId)),
+    (snapshot) => onData(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+    onError
+  );
+}
+
 export function subscribeRequestedTrips(onData, onError) {
   return onSnapshot(
     query(collection(db, 'trips'), where('status', '==', TRIP_STATUS.requested)),
