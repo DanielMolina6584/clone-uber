@@ -1,10 +1,26 @@
 import { isInRange, toDate } from './dates';
 
+export const PAYMENT_METHODS = { mercadopago: 'Mercado Pago', stripe: 'Stripe', cash: 'Efectivo' };
+export const CATEGORY_LABELS = { economy: 'Económico', xl: 'XL', premium: 'Premium' };
+
 export const isFinished = (trip) => trip.status === 'completed' || trip.status === 'paid';
 export const tripDate = (trip) => toDate(trip.completedAt) || toDate(trip.createdAt);
 
-export function filterTrips(trips, { range }) {
-  return trips.filter((trip) => isFinished(trip) && isInRange(tripDate(trip), range));
+export function paymentLabel(trip) {
+  if (trip.paymentMethod === 'cash') return trip.status === 'paid' ? 'Efectivo' : 'Pendiente';
+  if (trip.paymentStatus === 'approved') return 'Aprobado';
+  if (trip.paymentStatus === 'rejected') return 'Rechazado';
+  return 'Pendiente';
+}
+
+export function sortByRecent(trips) {
+  return [...trips].sort((a, b) => (tripDate(b)?.getTime() || 0) - (tripDate(a)?.getTime() || 0));
+}
+
+export function filterTrips(trips, { range, method = 'all' }) {
+  return trips.filter(
+    (trip) => isFinished(trip) && isInRange(tripDate(trip), range) && (method === 'all' || trip.paymentMethod === method)
+  );
 }
 
 export function summarizeTrips(trips) {

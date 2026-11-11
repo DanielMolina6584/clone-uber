@@ -17,6 +17,10 @@ export function subscribeDriverTrips(driverId, onData, onError) {
   );
 }
 
+export function subscribeTrip(tripId, onData, onError) {
+  return onSnapshot(tripRef(tripId), (snapshot) => onData(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null), onError);
+}
+
 export function subscribeRequestedTrips(onData, onError) {
   return onSnapshot(
     query(collection(db, 'trips'), where('status', '==', TRIP_STATUS.requested)),

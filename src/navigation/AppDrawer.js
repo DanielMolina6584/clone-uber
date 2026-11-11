@@ -4,7 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '../context/SessionContext';
 import EarningsScreen from '../screens/EarningsScreen';
 import MapScreen from '../screens/MapScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import { colors, spacing, typography } from '../theme';
+import HistoryNavigator from './HistoryNavigator';
 
 const Drawer = createDrawerNavigator();
 
@@ -45,6 +47,16 @@ export default function AppDrawer() {
         name="Map"
         component={MapScreen}
         options={{ title: 'Inicio', drawerIcon: ({ color, size }) => <Ionicons name="car-outline" size={size} color={color} /> }}
+      />
+      <Drawer.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'Perfil', drawerIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} /> }}
+      />
+      <Drawer.Screen
+        name="History"
+        component={HistoryNavigator}
+        options={{ title: 'Historial', headerShown: false, drawerIcon: ({ color, size }) => <Ionicons name="time-outline" size={size} color={color} /> }}
       />
       <Drawer.Screen
         name="Earnings"

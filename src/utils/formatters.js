@@ -17,3 +17,11 @@ export function formatDistance(km) {
 export function formatDuration(min) {
   return `${Math.round(min || 0)} min`;
 }
+
+export function formatDateTime(date) {
+  if (!date) return '';
+  const hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const suffix = hours >= 12 ? 'p. m.' : 'a. m.';
+  return `${formatDate(date)} ${hours % 12 || 12}:${minutes} ${suffix}`;
+}

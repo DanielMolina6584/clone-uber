@@ -36,3 +36,7 @@ export function setDriverAvailability(driverId, isAvailable) {
 export function updateDriverLocation(driverId, { lat, lng, heading }) {
   return updateDoc(doc(db, 'drivers', driverId), { location: { lat, lng, heading }, locationUpdatedAt: serverTimestamp() });
 }
+
+export function updateDriverProfile(driverId, fields) {
+  return updateDoc(doc(db, 'drivers', driverId), fields);
+}

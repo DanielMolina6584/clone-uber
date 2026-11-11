@@ -264,3 +264,33 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   el saldo puede quedar negativo. La pantalla es una entrada nueva del Drawer. Verificado con pruebas en Node (rangos de hoy, semana y mes, propinas, promedio,
   saldo con efectivo y lista vacía). Las reglas de Firestore deben permitir leer `trips`.
 - **Archivos afectados:** `src/hooks/useEarnings.js`, `src/screens/EarningsScreen.js`, `src/components/InfoRow.js`, `src/utils/dates.js`, `src/utils/trips.js`, `src/services/trips.js`, `src/navigation/AppDrawer.js`.
+
+## #020 · 2026-11-11 08:52 (UTC-5) · Historial de viajes con filtros y detalle de cada viaje
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo muestro el historial de viajes del conductor con filtros por periodo y método de pago, sin cargar toda la lista de golpe, y cómo abro el detalle de un viaje?
+- **Respuesta:** `useDriverTrips` se suscribe con `onSnapshot` a los viajes del conductor (`where('driverId', '==', driverId)`) y los ordena del más reciente al más
+  antiguo en el cliente, así no hace falta un índice compuesto. `HistoryScreen` usa un `FlatList`: el periodo (Hoy, Semana, Mes o Rango) y el método de pago se aplican
+  con `filterTrips` dentro de un `useMemo`, y solo se renderizan 20 viajes (`historyPageSize`) que crecen con `onEndReached`; al cambiar un filtro el contador vuelve a 20.
+  En el rango personalizado, si la fecha inicial es posterior a la final se muestra el error bajo el campo y la lista queda vacía. Cada fila muestra fecha, ruta,
+  categoría, tarifa, ganancia neta y una insignia de pago (`paymentLabel`: Aprobado, Efectivo, Pendiente o Rechazado). El detalle necesita navegar desde una lista, por eso
+  el Drawer apunta a un `HistoryNavigator` (Stack con la lista y el detalle) en lugar de a la pantalla suelta; el botón del menú se pone con `DrawerToggleButton`.
+  `TripDetailScreen` escucha un solo viaje con `subscribeTrip` y muestra tarifa, comisión con su porcentaje, propina, ganancia neta y calificación. Mientras no se guarde
+  la ruta recorrida, el mapa dibuja una línea recta entre origen y destino. Verificado con pruebas en Node (filtro por método, etiquetas de pago y orden por fecha).
+  Las reglas de Firestore deben permitir leer `trips`.
+- **Archivos afectados:** `src/screens/HistoryScreen.js`, `src/screens/TripDetailScreen.js`, `src/navigation/HistoryNavigator.js`, `src/navigation/AppDrawer.js`, `src/hooks/useDriverTrips.js`, `src/components/PaymentBadge.js`, `src/utils/trips.js`, `src/utils/formatters.js`, `src/services/trips.js`, `src/config/app.js`.
+
+## #021 · 2026-11-11 08:52 (UTC-5) · Perfil del conductor: editar datos sin tocar el estado de la cuenta
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo permito que el conductor edite su perfil (contacto, vehículo y correo de Mercado Pago) con la misma validación del registro, mostrando lo que no puede cambiar y sin que pueda modificar su estado de aprobación?
+- **Respuesta:** `ProfileScreen` arma el formulario desde el documento del conductor que ya entrega `SessionContext`, y reutiliza los validadores del registro
+  (`validateFullName`, `validatePhone`, `validateEmail`, `validateVehicleText`, `validateColor`, `validateCapacity`) con el patrón de campo tocado: el error aparece bajo el campo al salir de él, y
+  al guardar se marcan todos. El formulario no se reescribe con los datos de Firestore una vez que el usuario empieza a editar, para no pisar lo que escribe. Se guarda con
+  `updateDoc` y claves con punto (`'personal.fullName'`, `'vehicle.brand'`, `'documents.mercadoPagoEmail'`), que cambian solo esos campos y dejan intactos los demás
+  del mapa. Categoría, placa, año y los vencimientos de licencia, SOAT y técnico-mecánica se muestran en solo lectura. La categoría se pasa a `validateCapacity`
+  porque XL exige mínimo 6 pasajeros. Cambiar el idioma también se guarda en AsyncStorage. No hay botón de cerrar sesión aquí: ya existe en el Drawer. El estado de la
+  cuenta (`status`) no se envía nunca; las reglas de Firestore deben permitir actualizar `drivers` solo si `status` no cambia.
+- **Archivos afectados:** `src/screens/ProfileScreen.js`, `src/navigation/AppDrawer.js`, `src/services/drivers.js`.
