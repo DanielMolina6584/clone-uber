@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text } from 'react-native';
 import { colors, radius, typography } from '../theme';
 
 export default function PrimaryButton({ title, onPress, disabled, variant = 'primary' }) {
@@ -11,7 +11,10 @@ export default function PrimaryButton({ title, onPress, disabled, variant = 'pri
         disabled ? styles.disabled : null,
         pressed && !disabled ? styles.pressed : null,
       ]}
-      onPress={onPress}
+      onPress={(event) => {
+        Keyboard.dismiss();
+        onPress?.(event);
+      }}
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
     >

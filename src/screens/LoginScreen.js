@@ -43,7 +43,7 @@ export default function LoginScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <Text style={styles.title}>{t('login.title')}</Text>
           <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
           <FormField label={t('personal.idNumber')} value={idNumber} onChangeText={(v) => setIdNumber(v.replace(/\D/g, ''))} onBlur={() => setTouched(true)} error={fieldError} keyboardType="numeric" maxLength={10} />

@@ -6,7 +6,7 @@ import PersonalDataScreen from '../screens/PersonalDataScreen';
 import VehicleScreen from '../screens/VehicleScreen';
 import { useLanguage } from '../context/LanguageContext';
 import { useSession } from '../context/SessionContext';
-import { submitDriverRegistration } from '../services/drivers';
+import { DRIVER_STATUS, submitDriverRegistration } from '../services/drivers';
 import { colors } from '../theme';
 
 const Tab = createMaterialTopTabNavigator();
@@ -28,8 +28,9 @@ export default function RegistrationTabs({ onLogin }) {
     setSubmitting(true);
     setSubmitError('');
     try {
-      const driverId = await submitDriverRegistration({ ...registration, documents });
-      await startSession(driverId);
+      const data = { ...registration, documents };
+      const driverId = await submitDriverRegistration(data);
+      await startSession(driverId, { ...data, status: DRIVER_STATUS.pending });
     } catch (error) {
       console.warn('submitDriverRegistration', error);
       setSubmitError('registration.submitFailed');

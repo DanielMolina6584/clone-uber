@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
@@ -33,12 +33,14 @@ export default function PhotoPicker({ label, uri, onChange, error, title, varian
     pick(await ImagePicker.launchImageLibraryAsync(pickerOptions));
   };
 
-  const openOptions = () =>
+  const openOptions = () => {
+    Keyboard.dismiss();
     Alert.alert(photoTitle, t('photo.chooseSource'), [
       { text: t('photo.camera'), onPress: takePhoto },
       { text: t('photo.gallery'), onPress: chooseFromGallery },
       { text: t('photo.cancel'), style: 'cancel' },
     ]);
+  };
 
   const message = error || permissionError;
 

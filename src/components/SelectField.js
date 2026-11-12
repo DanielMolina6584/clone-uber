@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
 import { colors, radius, spacing, typography } from '../theme';
@@ -23,7 +23,10 @@ export default function SelectField({ label, value, options, onChange, error, pl
       <Text style={styles.label}>{label}</Text>
       <Pressable
         style={[styles.box, error ? styles.boxError : null]}
-        onPress={() => setOpen(true)}
+        onPress={() => {
+          Keyboard.dismiss();
+          setOpen(true);
+        }}
         accessibilityRole="button"
         accessibilityLabel={label}
       >

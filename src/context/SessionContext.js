@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { DRIVER_STATUS, subscribeDriver } from '../services/drivers';
 import { clearSession, getSessionId, saveSessionId } from '../services/preferences';
 
@@ -10,6 +10,8 @@ export function SessionProvider({ children }) {
   const [restoring, setRestoring] = useState(true);
   const [waitingDriver, setWaitingDriver] = useState(false);
   const [error, setError] = useState('');
+  // Id de un conductor recién registrado: su documento puede tardar en llegar al listener y no debe cerrar la sesión
+  const freshId = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -38,9 +40,13 @@ export function SessionProvider({ children }) {
     const unsubscribe = subscribeDriver(
       driverId,
       (data) => {
-        // Si el documento ya no existe, la sesión guardada no sirve
-        if (!data) endSession();
-        else setDriver(data);
+        // Si el documento ya no existe, la sesión guardada no sirve (salvo que acabe de crearse)
+        if (!data) {
+          if (freshId.current !== driverId) endSession();
+        } else {
+          freshId.current = null;
+          setDriver(data);
+        }
         setWaitingDriver(false);
       },
       (err) => {
@@ -52,10 +58,12 @@ export function SessionProvider({ children }) {
     return unsubscribe;
   }, [driverId, endSession]);
 
-  const startSession = useCallback(async (id) => {
+  // Con `initialDriver` (registro nuevo) se muestra de inmediato lo enviado, sin esperar la lectura del documento
+  const startSession = useCallback(async (id, initialDriver = null) => {
     await saveSessionId(id);
-    setDriver(null);
-    setWaitingDriver(true);
+    freshId.current = initialDriver ? id : null;
+    setDriver(initialDriver ? { id, ...initialDriver } : null);
+    setWaitingDriver(!initialDriver);
     setDriverId(id);
   }, []);
 

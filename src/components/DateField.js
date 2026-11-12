@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../context/LanguageContext';
@@ -30,7 +30,11 @@ export default function DateField({ label, value, onChange, onClose, error, maxi
       <Text style={styles.label}>{label}</Text>
       <Pressable
         style={[styles.field, error ? styles.fieldError : null]}
-        onPress={() => (open ? close() : setOpen(true))}
+        onPress={() => {
+          Keyboard.dismiss();
+          if (open) close();
+          else setOpen(true);
+        }}
         accessibilityRole="button"
         accessibilityLabel={label}
       >

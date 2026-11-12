@@ -364,3 +364,25 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   `in_progress` a `completed` y de ahí a `paid`. Si la segunda escritura falla, el viaje queda `completed` con "Efectivo: por cobrar" y se registra el error. El saldo no cambia de criterio: un viaje en efectivo cobrado resta la comisión. Con Mercado Pago y Stripe el pago
   sigue "no pagado" hasta que exista el cobro por pasarela. Una prueba en Node cubrió los estados por método y el saldo, y detectó una referencia a una constante que ya no existía.
 - **Archivos afectados:** `src/utils/trips.js`, `src/components/PaymentBadge.js`, `src/services/trips.js`, `src/screens/ActiveTripScreen.js`, `src/i18n/es.js`, `src/i18n/en.js`.
+
+## #027 · 2026-11-12 12:33 (UTC-5) · Al registrarse, mostrar "Pendiente de aprobación" sin depender de releer el documento
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Después de enviar el registro la app vuelve a Datos personales, pero el conductor sí quedó creado: al iniciar sesión aparece bien "Pendiente de aprobación". ¿Por qué pasa y cómo lo evito?
+- **Respuesta:** Al terminar el registro la sesión se iniciaba con solo el id y el estado quedaba en "esperando al conductor" hasta que el `onSnapshot` del documento respondiera. Si esa primera lectura llegaba vacía o con error, la navegación raíz
+  (que muestra la pantalla de estado solo cuando hay `driverId` y `driver`) caía otra vez en el registro, y `endSession` borraba la sesión guardada si el documento aparecía como inexistente. En el inicio de sesión no pasa porque el documento ya
+  lleva tiempo creado. La causa exacta de esa primera lectura no se pudo confirmar sin el dispositivo, así que el arreglo la vuelve irrelevante: `startSession(id, initialDriver)` recibe lo que se acaba de enviar (con `status: 'pending_approval'`) y lo
+  muestra de inmediato, y el id recién creado se recuerda en un ref para que una lectura vacía no cierre la sesión; en cuanto llega el documento real se reemplaza. Un documento inexistente sigue cerrando la sesión si viene de una sesión restaurada.
+  Para la siguiente prueba, si vuelve a pasar, hay que revisar en la consola de Metro el aviso `subscribeDriver` (suele ser un error de permisos de Firestore).
+- **Archivos afectados:** `src/context/SessionContext.js`, `src/navigation/RegistrationTabs.js`.
+
+## #028 · 2026-11-12 12:37 (UTC-5) · Cerrar el teclado numérico al tocar cualquier otro control
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Al enfocar un campo numérico y luego tocar otro campo, un selector o un botón, el teclado numérico se queda abierto. ¿Cómo hago que se cierre con cualquier acción?
+- **Respuesta:** Con `keyboardShouldPersistTaps="handled"` un toque sobre un control (`Pressable`) cuenta como "manejado" y no cierra el teclado; solo cierra el que cae en una zona vacía. Además, en iOS los teclados `numeric`, `number-pad` y `phone-pad` no tienen tecla de retorno.
+  Se resolvió en tres frentes: (1) `Keyboard.dismiss()` al inicio del `onPress` de los controles que no son un `TextInput` (selectores, campo de fecha, foto, casilla, botones y selector segmentado); (2) `keyboardDismissMode="on-drag"` en los formularios, para que arrastrar el scroll lo cierre; (3) una barra "Listo"
+  encima del teclado numérico en iOS con `InputAccessoryView`, que `FormField` agrega solo cuando `keyboardType` es numérico. Pasar de un campo de texto a otro no necesita nada especial: el teclado cambia solo. En Android el botón de retroceso del sistema ya cierra el teclado.
+- **Archivos afectados:** `src/components/FormField.js`, `SelectField.js`, `DateField.js`, `PhotoPicker.js`, `CheckboxField.js`, `PrimaryButton.js`, `SegmentedControl.js`, `src/screens/{Personal,Vehicle,Documents,Login,Profile}Screen.js`, `PassengerSimulatorScreen.js`, `src/i18n/es.js`, `src/i18n/en.js`.

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../theme';
 
@@ -7,7 +7,10 @@ export default function CheckboxField({ label, value, onChange, error }) {
     <View style={styles.container}>
       <Pressable
         style={styles.row}
-        onPress={() => onChange(!value)}
+        onPress={() => {
+          Keyboard.dismiss();
+          onChange(!value);
+        }}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: !!value }}
         hitSlop={8}

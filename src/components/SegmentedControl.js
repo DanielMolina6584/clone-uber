@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLanguage } from '../context/LanguageContext';
 import { colors, radius, spacing, typography } from '../theme';
 
@@ -14,7 +14,10 @@ export default function SegmentedControl({ label, options, value, onChange }) {
             <Pressable
               key={option.value}
               style={[styles.segment, selected ? styles.segmentSelected : null]}
-              onPress={() => onChange(option.value)}
+              onPress={() => {
+                Keyboard.dismiss();
+                onChange(option.value);
+              }}
               accessibilityRole="button"
               accessibilityState={{ selected }}
             >

@@ -88,7 +88,7 @@ export default function PassengerSimulatorScreen() {
   }, [creating, location, locationError, category, paymentMethod, tip, t]);
 
   return (
-    <ScrollView style={styles.safe} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.safe} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
       <Text style={styles.warning}>{t('simulator.warning')}</Text>
       <SegmentedControl label={t('simulator.category')} options={VEHICLE_CATEGORIES} value={category} onChange={setCategory} />
       <SegmentedControl label={t('simulator.method')} options={METHODS} value={paymentMethod} onChange={setPaymentMethod} />

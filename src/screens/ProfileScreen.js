@@ -97,7 +97,7 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.section}>{t('profile.personal')}</Text>
         <FormField label={t('personal.fullName')} value={form.fullName} onChangeText={(v) => setField('fullName', v)} onBlur={() => touch('fullName')} error={errorOf('fullName')} maxLength={50} autoCapitalize="words" />
         <FormField label={t('personal.phone')} value={form.phone} onChangeText={(v) => setField('phone', onlyDigits(v))} onBlur={() => touch('phone')} error={errorOf('phone')} keyboardType="phone-pad" maxLength={10} />

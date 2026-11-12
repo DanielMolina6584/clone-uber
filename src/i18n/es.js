@@ -57,6 +57,7 @@ export default {
 
   // Componentes comunes
   'common.continue': 'Continuar',
+  'common.done': 'Listo',
   'common.selectOption': 'Selecciona una opción',
   'common.signOut': 'Cerrar sesión',
   'common.backHome': 'Volver al inicio',
