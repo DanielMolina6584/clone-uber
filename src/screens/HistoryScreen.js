@@ -20,7 +20,6 @@ const PERIOD_OPTIONS = [
 const METHOD_OPTIONS = [
   { label: 'Todos', value: 'all' },
   { label: 'M. Pago', value: 'mercadopago' },
-  { label: 'Stripe', value: 'stripe' },
   { label: 'Efectivo', value: 'cash' },
 ];
 
@@ -70,14 +69,14 @@ export default function HistoryScreen({ navigation }) {
 
   const header = (
     <View style={styles.filters}>
-      <SegmentedControl label="Periodo" options={PERIOD_OPTIONS} value={period} onChange={setPeriod} />
+      <SegmentedControl compact label="Periodo" options={PERIOD_OPTIONS} value={period} onChange={setPeriod} />
       {period === 'range' ? (
         <>
           <DateField label="Desde" value={from} onChange={setFrom} maximumDate={new Date()} />
           <DateField label="Hasta" value={to} onChange={setTo} maximumDate={new Date()} error={rangeError} />
         </>
       ) : null}
-      <SegmentedControl label="Método de pago" options={METHOD_OPTIONS} value={method} onChange={setMethod} />
+      <SegmentedControl compact label="Método de pago" options={METHOD_OPTIONS} value={method} onChange={setMethod} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );

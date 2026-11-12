@@ -281,7 +281,7 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   Las reglas de Firestore deben permitir leer `trips`.
 - **Archivos afectados:** `src/screens/HistoryScreen.js`, `src/screens/TripDetailScreen.js`, `src/navigation/HistoryNavigator.js`, `src/navigation/AppDrawer.js`, `src/hooks/useDriverTrips.js`, `src/components/PaymentBadge.js`, `src/utils/trips.js`, `src/utils/formatters.js`, `src/services/trips.js`, `src/config/app.js`.
 
-## #021 · 2026-11-11 08:52 (UTC-5) · Perfil del conductor: editar datos sin tocar el estado de la cuenta
+## #021 · 2026-11-11 09:04 (UTC-5) · Perfil del conductor: editar datos sin tocar el estado de la cuenta
 
 - **Solicitado por:** kpineda
 - **Respondido por:** Claude Code (Claude Sonnet 5.5)
