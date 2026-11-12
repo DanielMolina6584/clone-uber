@@ -6,14 +6,13 @@ import PrimaryButton from '../components/PrimaryButton';
 import SegmentedControl from '../components/SegmentedControl';
 import SelectField from '../components/SelectField';
 import { LANGUAGES, VEHICLE_COLORS } from '../data/options';
+import { useLanguage } from '../context/LanguageContext';
 import { useSession } from '../context/SessionContext';
 import { updateDriverProfile } from '../services/drivers';
-import { saveLanguage } from '../services/preferences';
 import { colors, radius, spacing, typography } from '../theme';
 import { formatDate } from '../utils/formatters';
 import { toDate } from '../utils/dates';
 import { validateCapacity, validateColor, validateEmail, validateFullName, validatePhone, validateVehicleText } from '../utils/validators';
-import { CATEGORY_LABELS } from '../utils/trips';
 
 const validators = {
   fullName: validateFullName,
@@ -38,13 +37,14 @@ const buildForm = (driver) => ({
   mercadoPagoEmail: driver?.documents?.mercadoPagoEmail || '',
 });
 
-const dateText = (value) => {
+const dateText = (value, t) => {
   const date = toDate(value);
-  return date ? formatDate(date) : 'No aplica';
+  return date ? formatDate(date) : t('profile.notApplicable');
 };
 
 export default function ProfileScreen() {
   const { driver } = useSession();
+  const { t, setLanguage } = useLanguage();
   const [form, setForm] = useState(() => buildForm(driver));
   const [touched, setTouched] = useState({});
   const [saving, setSaving] = useState(false);
@@ -61,7 +61,7 @@ export default function ProfileScreen() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
   const touch = (field) => setTouched((prev) => ({ ...prev, [field]: true }));
-  const errorOf = (field) => (touched[field] ? validators[field](form[field], context) : '');
+  const errorOf = (field) => t(touched[field] ? validators[field](form[field], context) : '');
   const onlyDigits = (value) => value.replace(/\D/g, '');
 
   const handleSave = useCallback(async () => {
@@ -83,14 +83,14 @@ export default function ProfileScreen() {
         'vehicle.capacity': form.capacity,
         'documents.mercadoPagoEmail': form.mercadoPagoEmail.trim(),
       });
-      setMessage('Cambios guardados');
+      setMessage(t('profile.saved'));
     } catch (error) {
       console.warn('updateDriverProfile', error);
-      setSaveError('No pudimos guardar los cambios. Inténtalo de nuevo.');
+      setSaveError(t('profile.saveFailed'));
     } finally {
       setSaving(false);
     }
-  }, [driver, form, context]);
+  }, [driver, form, context, t]);
 
   if (!driver) return null;
   const documents = driver.documents || {};
@@ -98,43 +98,43 @@ export default function ProfileScreen() {
   return (
     <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.section}>Datos personales</Text>
-        <FormField label="Nombre completo" value={form.fullName} onChangeText={(v) => setField('fullName', v)} onBlur={() => touch('fullName')} error={errorOf('fullName')} maxLength={50} autoCapitalize="words" />
-        <FormField label="Número de celular" value={form.phone} onChangeText={(v) => setField('phone', onlyDigits(v))} onBlur={() => touch('phone')} error={errorOf('phone')} keyboardType="phone-pad" maxLength={10} />
-        <FormField label="Correo electrónico" value={form.email} onChangeText={(v) => setField('email', v)} onBlur={() => touch('email')} error={errorOf('email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+        <Text style={styles.section}>{t('profile.personal')}</Text>
+        <FormField label={t('personal.fullName')} value={form.fullName} onChangeText={(v) => setField('fullName', v)} onBlur={() => touch('fullName')} error={errorOf('fullName')} maxLength={50} autoCapitalize="words" />
+        <FormField label={t('personal.phone')} value={form.phone} onChangeText={(v) => setField('phone', onlyDigits(v))} onBlur={() => touch('phone')} error={errorOf('phone')} keyboardType="phone-pad" maxLength={10} />
+        <FormField label={t('personal.email')} value={form.email} onChangeText={(v) => setField('email', v)} onBlur={() => touch('email')} error={errorOf('email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
         <SegmentedControl
-          label="Idioma"
+          label={t('personal.language')}
           options={LANGUAGES}
           value={form.language}
           onChange={(v) => {
             setField('language', v);
-            saveLanguage(v);
+            setLanguage(v);
           }}
         />
 
-        <Text style={styles.section}>Vehículo</Text>
+        <Text style={styles.section}>{t('profile.vehicle')}</Text>
         <View style={styles.card}>
-          <InfoRow label="Categoría" value={CATEGORY_LABELS[driver.vehicle?.category] || ''} />
-          <InfoRow label="Placa" value={driver.vehicle?.plate || ''} />
-          <InfoRow label="Año" value={String(driver.vehicle?.year || '')} />
+          <InfoRow label={t('vehicle.category')} value={driver.vehicle?.category ? t(`category.${driver.vehicle.category}`) : ''} />
+          <InfoRow label={t('vehicle.plate')} value={driver.vehicle?.plate || ''} />
+          <InfoRow label={t('vehicle.year')} value={String(driver.vehicle?.year || '')} />
         </View>
-        <FormField label="Marca" value={form.brand} onChangeText={(v) => setField('brand', v)} onBlur={() => touch('brand')} error={errorOf('brand')} maxLength={30} />
-        <FormField label="Modelo" value={form.model} onChangeText={(v) => setField('model', v)} onBlur={() => touch('model')} error={errorOf('model')} maxLength={30} />
-        <SelectField label="Color" value={form.color} options={VEHICLE_COLORS} onChange={(v) => { setField('color', v); touch('color'); }} error={errorOf('color')} />
-        <FormField label="Capacidad de pasajeros" value={form.capacity} onChangeText={(v) => setField('capacity', onlyDigits(v))} onBlur={() => touch('capacity')} error={errorOf('capacity')} keyboardType="numeric" maxLength={2} />
+        <FormField label={t('vehicle.brand')} value={form.brand} onChangeText={(v) => setField('brand', v)} onBlur={() => touch('brand')} error={errorOf('brand')} maxLength={30} />
+        <FormField label={t('vehicle.model')} value={form.model} onChangeText={(v) => setField('model', v)} onBlur={() => touch('model')} error={errorOf('model')} maxLength={30} />
+        <SelectField label={t('vehicle.color')} value={form.color} options={VEHICLE_COLORS} onChange={(v) => { setField('color', v); touch('color'); }} error={errorOf('color')} />
+        <FormField label={t('vehicle.capacity')} value={form.capacity} onChangeText={(v) => setField('capacity', onlyDigits(v))} onBlur={() => touch('capacity')} error={errorOf('capacity')} keyboardType="numeric" maxLength={2} />
 
-        <Text style={styles.section}>Documentos y pagos</Text>
+        <Text style={styles.section}>{t('profile.documents')}</Text>
         <View style={styles.card}>
-          <InfoRow label="Licencia, vence" value={dateText(documents.licenseExpiry)} />
-          <InfoRow label="SOAT, vence" value={dateText(documents.soatExpiry)} />
-          <InfoRow label="Técnico-mecánica, vence" value={dateText(documents.techInspectionExpiry)} />
+          <InfoRow label={t('profile.licenseExpires')} value={dateText(documents.licenseExpiry, t)} />
+          <InfoRow label={t('profile.soatExpires')} value={dateText(documents.soatExpiry, t)} />
+          <InfoRow label={t('profile.techExpires')} value={dateText(documents.techInspectionExpiry, t)} />
         </View>
-        <FormField label="Correo de Mercado Pago" value={form.mercadoPagoEmail} onChangeText={(v) => setField('mercadoPagoEmail', v)} onBlur={() => touch('mercadoPagoEmail')} error={errorOf('mercadoPagoEmail')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+        <FormField label={t('profile.mercadoPagoEmail')} value={form.mercadoPagoEmail} onChangeText={(v) => setField('mercadoPagoEmail', v)} onBlur={() => touch('mercadoPagoEmail')} error={errorOf('mercadoPagoEmail')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
 
         {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
         {message ? <Text style={styles.success}>{message}</Text> : null}
         <View style={styles.actions}>
-          <PrimaryButton title={saving ? 'Guardando...' : 'Guardar cambios'} onPress={handleSave} disabled={saving} />
+          <PrimaryButton title={saving ? t('profile.saving') : t('profile.save')} onPress={handleSave} disabled={saving} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

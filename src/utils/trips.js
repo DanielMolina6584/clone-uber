@@ -1,16 +1,24 @@
 import { isInRange, toDate } from './dates';
 
-export const PAYMENT_METHODS = { mercadopago: 'Mercado Pago', stripe: 'Stripe', cash: 'Efectivo' };
-export const CATEGORY_LABELS = { economy: 'Económico', xl: 'XL', premium: 'Premium' };
-
 export const isFinished = (trip) => trip.status === 'completed' || trip.status === 'paid';
-export const tripDate = (trip) => toDate(trip.completedAt) || toDate(trip.createdAt);
+// Un viaje cancelado no tiene completedAt: se fecha por cancelledAt o, si falta, por createdAt
+export const tripDate = (trip) => toDate(trip.completedAt) || toDate(trip.cancelledAt) || toDate(trip.createdAt);
+
+// Claves de traducción de la insignia de pago; el texto se obtiene con t()
+
+
+const PAYMENT_METHOD_KEYS = ['cash', 'mercadopago', 'stripe'];
+
+// Estado del pago: paid (cobrado), rejected (la pasarela lo rechazó) o pending (aún sin cobrar)
+export function paymentState(trip) {
+  if (trip.status === 'paid' || trip.paymentStatus === 'approved' || trip.paymentStatus === 'cash') return 'paid';
+  if (trip.paymentStatus === 'rejected') return 'rejected';
+  return 'pending';
+}
 
 export function paymentLabel(trip) {
-  if (trip.paymentMethod === 'cash') return trip.status === 'paid' ? 'Efectivo' : 'Pendiente';
-  if (trip.paymentStatus === 'approved') return 'Aprobado';
-  if (trip.paymentStatus === 'rejected') return 'Rechazado';
-  return 'Pendiente';
+  const method = PAYMENT_METHOD_KEYS.includes(trip.paymentMethod) ? trip.paymentMethod : 'cash';
+  return `payment.${method}.${paymentState(trip)}`;
 }
 
 export function sortByRecent(trips) {
@@ -20,6 +28,22 @@ export function sortByRecent(trips) {
 export function filterTrips(trips, { range, method = 'all' }) {
   return trips.filter(
     (trip) => isFinished(trip) && isInRange(tripDate(trip), range) && (method === 'all' || trip.paymentMethod === method)
+  );
+}
+
+// Estado del viaje para el historial: completado, pagado o cancelado (clave de traducción)
+export function tripStatusLabel(trip) {
+  if (trip.status === 'cancelled') return 'tripStatus.cancelled';
+  if (trip.status === 'paid') return 'tripStatus.paid';
+  return 'tripStatus.completed';
+}
+
+const HISTORY_STATUSES = ['completed', 'paid', 'cancelled'];
+
+// El historial incluye también los viajes cancelados; ganancias y saldo siguen usando filterTrips
+export function filterHistory(trips, { range, method = 'all' }) {
+  return trips.filter(
+    (trip) => HISTORY_STATUSES.includes(trip.status) && isInRange(tripDate(trip), range) && (method === 'all' || trip.paymentMethod === method)
   );
 }
 

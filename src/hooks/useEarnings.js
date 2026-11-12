@@ -21,7 +21,7 @@ export function useEarnings() {
       },
       (err) => {
         console.warn('useEarnings', err);
-        setError('No pudimos cargar tus ganancias.');
+        setError('earnings.failed');
         setLoading(false);
       }
     );

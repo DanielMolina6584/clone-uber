@@ -1,23 +1,25 @@
 import { StyleSheet, Switch, Text, View } from 'react-native';
+import { useLanguage } from '../context/LanguageContext';
 import { colors, radius, spacing, typography } from '../theme';
 
 export default function AvailabilityToggle({ available, onChange, disabled, error }) {
+  const { t } = useLanguage();
   return (
     <View>
       <View style={styles.pill}>
         <View style={[styles.dot, { backgroundColor: available ? colors.exito : colors.textoDeshabilitado }]} />
-        <Text style={styles.label}>{available ? 'Disponible' : 'No disponible'}</Text>
+        <Text style={styles.label}>{available ? t('availability.available') : t('availability.unavailable')}</Text>
         <Switch
           value={available}
           onValueChange={onChange}
           disabled={disabled}
           trackColor={{ false: colors.borde, true: colors.exito }}
           thumbColor={colors.fondo}
-          accessibilityLabel="Cambiar disponibilidad"
+          accessibilityLabel={t('availability.switchLabel')}
         />
       </View>
-      {disabled ? <Text style={styles.hint}>Podrás ponerte Disponible cuando tu cuenta sea aprobada.</Text> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {disabled ? <Text style={styles.hint}>{t('availability.hint')}</Text> : null}
+      {error ? <Text style={styles.error}>{t(error)}</Text> : null}
     </View>
   );
 }

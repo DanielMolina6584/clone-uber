@@ -21,7 +21,7 @@ export function useDriverTrips() {
       },
       (err) => {
         console.warn('useDriverTrips', err);
-        setError('No pudimos cargar tu historial.');
+        setError('history.failed');
         setLoading(false);
       }
     );

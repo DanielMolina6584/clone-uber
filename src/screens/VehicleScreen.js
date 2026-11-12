@@ -6,6 +6,7 @@ import PhotoPicker from '../components/PhotoPicker';
 import PrimaryButton from '../components/PrimaryButton';
 import RegistrationHeader from '../components/RegistrationHeader';
 import SelectField from '../components/SelectField';
+import { useLanguage } from '../context/LanguageContext';
 import { VEHICLE_CATEGORIES, VEHICLE_COLORS } from '../data/options';
 import { colors, spacing } from '../theme';
 import {
@@ -43,12 +44,13 @@ const INITIAL_FORM = {
 };
 
 export default function VehicleScreen({ onContinue, onBack }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(INITIAL_FORM);
   const [touched, setTouched] = useState({});
 
   const setField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const touch = (field) => setTouched((prev) => ({ ...prev, [field]: true }));
-  const errorOf = (field) => (touched[field] ? validators[field](form[field], form) : '');
+  const errorOf = (field) => t(touched[field] ? validators[field](form[field], form) : '');
   const onlyDigits = (value) => value.replace(/\D/g, '');
 
   const isValid = useMemo(
@@ -77,12 +79,12 @@ export default function VehicleScreen({ onContinue, onBack }) {
           <RegistrationHeader
             step={2}
             onBack={onBack}
-            title="Tu vehículo"
-            subtitle="Registra el vehículo con el que vas a recibir viajes."
+            title={t('vehicle.title')}
+            subtitle={t('vehicle.subtitle')}
           />
 
           <SelectField
-            label="Categoría"
+            label={t('vehicle.category')}
             value={form.category}
             options={VEHICLE_CATEGORIES}
             onChange={(v) => {
@@ -90,10 +92,10 @@ export default function VehicleScreen({ onContinue, onBack }) {
               touch('category');
             }}
             error={errorOf('category')}
-            placeholder="Selecciona una categoría"
+            placeholder={t('vehicle.selectCategory')}
           />
           <FormField
-            label="Placa"
+            label={t('vehicle.plate')}
             value={form.plate}
             onChangeText={(v) => setField('plate', normalizePlate(v))}
             onBlur={() => touch('plate')}
@@ -104,7 +106,7 @@ export default function VehicleScreen({ onContinue, onBack }) {
             autoCorrect={false}
           />
           <FormField
-            label="Marca"
+            label={t('vehicle.brand')}
             value={form.brand}
             onChangeText={(v) => setField('brand', v)}
             onBlur={() => touch('brand')}
@@ -113,7 +115,7 @@ export default function VehicleScreen({ onContinue, onBack }) {
             autoCapitalize="words"
           />
           <FormField
-            label="Modelo"
+            label={t('vehicle.model')}
             value={form.model}
             onChangeText={(v) => setField('model', v)}
             onBlur={() => touch('model')}
@@ -122,17 +124,17 @@ export default function VehicleScreen({ onContinue, onBack }) {
             autoCapitalize="words"
           />
           <FormField
-            label="Año"
+            label={t('vehicle.year')}
             value={form.year}
             onChangeText={(v) => setField('year', onlyDigits(v))}
             onBlur={() => touch('year')}
             error={errorOf('year')}
-            placeholder="AAAA"
+            placeholder={t('vehicle.yearPlaceholder')}
             keyboardType="numeric"
             maxLength={4}
           />
           <SelectField
-            label="Color"
+            label={t('vehicle.color')}
             value={form.color}
             options={VEHICLE_COLORS}
             onChange={(v) => {
@@ -140,22 +142,22 @@ export default function VehicleScreen({ onContinue, onBack }) {
               touch('color');
             }}
             error={errorOf('color')}
-            placeholder="Selecciona un color"
+            placeholder={t('vehicle.selectColor')}
           />
           <FormField
-            label="Capacidad de pasajeros"
+            label={t('vehicle.capacity')}
             value={form.capacity}
             onChangeText={(v) => setField('capacity', onlyDigits(v))}
             onBlur={() => touch('capacity')}
             error={errorOf('capacity')}
-            placeholder={form.category === 'xl' ? 'Mínimo 6' : undefined}
+            placeholder={form.category === 'xl' ? t('vehicle.minSix') : undefined}
             keyboardType="numeric"
             maxLength={2}
           />
           <PhotoPicker
             variant="card"
-            title="Foto del vehículo"
-            label="Toma una foto donde se vea la placa"
+            title={t('vehicle.photoTitle')}
+            label={t('vehicle.photoLabel')}
             uri={form.vehiclePhotoUri}
             onChange={(uri) => {
               setField('vehiclePhotoUri', uri);
@@ -165,7 +167,7 @@ export default function VehicleScreen({ onContinue, onBack }) {
           />
 
           <View style={styles.footer}>
-            <PrimaryButton title="Continuar" onPress={handleContinue} disabled={!isValid} />
+            <PrimaryButton title={t('common.continue')} onPress={handleContinue} disabled={!isValid} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

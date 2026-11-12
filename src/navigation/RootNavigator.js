@@ -1,10 +1,13 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { LocationProvider } from '../context/LocationContext';
 import { useSession } from '../context/SessionContext';
 import LoginScreen from '../screens/LoginScreen';
 import PendingApprovalScreen from '../screens/PendingApprovalScreen';
 import { DRIVER_STATUS } from '../services/drivers';
 import { colors } from '../theme';
+import ActiveTripScreen from '../screens/ActiveTripScreen';
+import TripSummaryScreen from '../screens/TripSummaryScreen';
 import AppDrawer from './AppDrawer';
 import RegistrationTabs from './RegistrationTabs';
 
@@ -21,7 +24,17 @@ export default function RootNavigator() {
     );
   }
 
-  if (driverId && driver?.status === DRIVER_STATUS.approved) return <AppDrawer />;
+  if (driverId && driver?.status === DRIVER_STATUS.approved) {
+    return (
+      <LocationProvider>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Main" component={AppDrawer} />
+          <Stack.Screen name="ActiveTrip" component={ActiveTripScreen} options={{ gestureEnabled: false }} />
+          <Stack.Screen name="TripSummary" component={TripSummaryScreen} options={{ gestureEnabled: false }} />
+        </Stack.Navigator>
+      </LocationProvider>
+    );
+  }
 
   if (driverId && driver) {
     return <PendingApprovalScreen name={driver.personal?.fullName?.split(' ')[0]} status={driver.status} onSignOut={endSession} />;

@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FormField from '../components/FormField';
 import PrimaryButton from '../components/PrimaryButton';
+import { useLanguage } from '../context/LanguageContext';
 import { useSession } from '../context/SessionContext';
 import { findDriverByIdNumber } from '../services/drivers';
 import { colors, spacing, typography } from '../theme';
@@ -10,12 +11,13 @@ import { validateIdNumber } from '../utils/validators';
 
 export default function LoginScreen({ navigation }) {
   const { startSession } = useSession();
+  const { t } = useLanguage();
   const [idNumber, setIdNumber] = useState('');
   const [touched, setTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const fieldError = touched ? validateIdNumber(idNumber) : '';
+  const fieldError = t(touched ? validateIdNumber(idNumber) : '');
 
   const handleSubmit = async () => {
     setTouched(true);
@@ -26,13 +28,13 @@ export default function LoginScreen({ navigation }) {
     try {
       const id = await findDriverByIdNumber(idNumber);
       if (!id) {
-        setSubmitError('No encontramos una cuenta con ese documento.');
+        setSubmitError(t('login.notFound'));
         return;
       }
       await startSession(id);
     } catch (error) {
       console.warn('findDriverByIdNumber', error);
-      setSubmitError('No pudimos buscar tu cuenta. Revisa tu conexión.');
+      setSubmitError(t('login.failed'));
     } finally {
       setLoading(false);
     }
@@ -42,13 +44,13 @@ export default function LoginScreen({ navigation }) {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Ya tengo cuenta</Text>
-          <Text style={styles.subtitle}>Ingresa tu documento de identidad para recuperar tu sesión.</Text>
-          <FormField label="Documento de identidad" value={idNumber} onChangeText={(v) => setIdNumber(v.replace(/\D/g, ''))} onBlur={() => setTouched(true)} error={fieldError} keyboardType="numeric" maxLength={10} />
+          <Text style={styles.title}>{t('login.title')}</Text>
+          <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
+          <FormField label={t('personal.idNumber')} value={idNumber} onChangeText={(v) => setIdNumber(v.replace(/\D/g, ''))} onBlur={() => setTouched(true)} error={fieldError} keyboardType="numeric" maxLength={10} />
           {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
-          <PrimaryButton title={loading ? 'Buscando...' : 'Ingresar'} onPress={handleSubmit} disabled={loading} />
+          <PrimaryButton title={loading ? t('login.searching') : t('login.submit')} onPress={handleSubmit} disabled={loading} />
           <Text style={styles.link} onPress={() => navigation.goBack()} accessibilityRole="link">
-            Volver al registro
+            {t('login.back')}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

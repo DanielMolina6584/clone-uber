@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../context/LanguageContext';
 import { colors, radius, spacing, typography } from '../theme';
 import { formatDate } from '../utils/formatters';
 
 export default function DateField({ label, value, onChange, onClose, error, maximumDate, minimumDate, initialDate }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   const close = () => {
@@ -32,7 +34,7 @@ export default function DateField({ label, value, onChange, onClose, error, maxi
         accessibilityRole="button"
         accessibilityLabel={label}
       >
-        <Text style={value ? styles.value : styles.placeholder}>{value ? formatDate(value) : 'DD/MM/AAAA'}</Text>
+        <Text style={value ? styles.value : styles.placeholder}>{value ? formatDate(value) : t('date.placeholder')}</Text>
         <Ionicons name="calendar-outline" size={20} color={colors.texto} />
       </Pressable>
       {open ? (
@@ -51,8 +53,8 @@ export default function DateField({ label, value, onChange, onClose, error, maxi
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: spacing.md },
-  label: { ...typography.etiqueta, color: colors.texto, marginBottom: spacing.sm },
+  container: { marginBottom: spacing.sm },
+  label: { ...typography.etiqueta, fontSize: 13, color: colors.texto, marginBottom: spacing.xs },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -62,10 +64,10 @@ const styles = StyleSheet.create({
     borderColor: colors.superficie,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    height: 52,
+    height: 44,
   },
   fieldError: { borderColor: colors.error },
-  value: { ...typography.texto, color: colors.texto },
-  placeholder: { ...typography.texto, color: colors.textoDeshabilitado },
+  value: { ...typography.texto, fontSize: 15, color: colors.texto },
+  placeholder: { ...typography.texto, fontSize: 15, color: colors.textoDeshabilitado },
   error: { ...typography.error, color: colors.error, marginTop: spacing.xs },
 });

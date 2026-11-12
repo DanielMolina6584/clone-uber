@@ -1,8 +1,8 @@
 export const GENDERS = [
-  { label: 'Masculino', value: 'male' },
-  { label: 'Femenino', value: 'female' },
-  { label: 'Otro', value: 'other' },
-  { label: 'Prefiero no decirlo', value: 'unspecified' },
+  { labelKey: 'gender.male', value: 'male' },
+  { labelKey: 'gender.female', value: 'female' },
+  { labelKey: 'gender.other', value: 'other' },
+  { labelKey: 'gender.unspecified', value: 'unspecified' },
 ];
 
 export const LANGUAGES = [
@@ -11,20 +11,20 @@ export const LANGUAGES = [
 ];
 
 export const VEHICLE_CATEGORIES = [
-  { label: 'Económico', value: 'economy' },
-  { label: 'XL', value: 'xl' },
-  { label: 'Premium', value: 'premium' },
+  { labelKey: 'category.economy', value: 'economy' },
+  { labelKey: 'category.xl', value: 'xl' },
+  { labelKey: 'category.premium', value: 'premium' },
 ];
 
 export const VEHICLE_COLORS = [
-  { label: 'Blanco', value: 'white' },
-  { label: 'Negro', value: 'black' },
-  { label: 'Gris', value: 'gray' },
-  { label: 'Plateado', value: 'silver' },
-  { label: 'Rojo', value: 'red' },
-  { label: 'Azul', value: 'blue' },
-  { label: 'Verde', value: 'green' },
-  { label: 'Amarillo', value: 'yellow' },
-  { label: 'Beige', value: 'beige' },
-  { label: 'Otro', value: 'other' },
+  { labelKey: 'color.white', value: 'white' },
+  { labelKey: 'color.black', value: 'black' },
+  { labelKey: 'color.gray', value: 'gray' },
+  { labelKey: 'color.silver', value: 'silver' },
+  { labelKey: 'color.red', value: 'red' },
+  { labelKey: 'color.blue', value: 'blue' },
+  { labelKey: 'color.green', value: 'green' },
+  { labelKey: 'color.yellow', value: 'yellow' },
+  { labelKey: 'color.beige', value: 'beige' },
+  { labelKey: 'color.other', value: 'other' },
 ];

@@ -1,14 +1,16 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../context/LanguageContext';
 import { colors, radius, spacing, typography } from '../theme';
 
 const TOTAL_STEPS = 3;
 
 export default function RegistrationHeader({ step, title, subtitle, onBack }) {
+  const { t } = useLanguage();
   return (
     <View>
       {onBack ? (
-        <Pressable style={styles.back} onPress={onBack} accessibilityRole="button" accessibilityLabel="Volver al paso anterior" hitSlop={12}>
+        <Pressable style={styles.back} onPress={onBack} accessibilityRole="button" accessibilityLabel={t('registration.back')} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.texto} />
         </Pressable>
       ) : null}
@@ -17,7 +19,7 @@ export default function RegistrationHeader({ step, title, subtitle, onBack }) {
           <View key={index} style={[styles.step, index < step ? styles.stepActive : null]} />
         ))}
       </View>
-      <Text style={styles.stepLabel}>{`Paso ${step} de ${TOTAL_STEPS}`}</Text>
+      <Text style={styles.stepLabel}>{t('registration.step', { step, total: TOTAL_STEPS })}</Text>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
     </View>

@@ -1,20 +1,21 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useLanguage } from '../context/LanguageContext';
 import { colors, radius, spacing } from '../theme';
-import { paymentLabel } from '../utils/trips';
+import { paymentLabel, paymentState } from '../utils/trips';
 
 const BADGE_COLORS = {
-  Aprobado: { background: colors.exito, text: colors.textoPrimario },
-  Efectivo: { background: colors.texto, text: colors.textoPrimario },
-  Pendiente: { background: colors.superficie, text: colors.texto },
-  Rechazado: { background: colors.error, text: colors.textoPrimario },
+  paid: { background: colors.exito, text: colors.textoPrimario },
+  pending: { background: colors.superficie, text: colors.texto },
+  rejected: { background: colors.error, text: colors.textoPrimario },
 };
 
 export default function PaymentBadge({ trip }) {
-  const label = paymentLabel(trip);
-  const palette = BADGE_COLORS[label];
+  const { t } = useLanguage();
+  const key = paymentLabel(trip);
+  const palette = BADGE_COLORS[paymentState(trip)];
   return (
     <View style={[styles.badge, { backgroundColor: palette.background }]}>
-      <Text style={[styles.text, { color: palette.text }]}>{label}</Text>
+      <Text style={[styles.text, { color: palette.text }]}>{t(key)}</Text>
     </View>
   );
 }

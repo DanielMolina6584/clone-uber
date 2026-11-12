@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import DocumentsScreen from '../screens/DocumentsScreen';
 import PersonalDataScreen from '../screens/PersonalDataScreen';
 import VehicleScreen from '../screens/VehicleScreen';
+import { useLanguage } from '../context/LanguageContext';
 import { useSession } from '../context/SessionContext';
 import { submitDriverRegistration } from '../services/drivers';
 import { colors } from '../theme';
@@ -21,7 +22,7 @@ export default function RegistrationTabs({ onLogin }) {
 
   const handleSubmit = async (documents) => {
     if (!registration.personal || !registration.vehicle) {
-      setSubmitError('Completa los pasos anteriores antes de enviar');
+      setSubmitError('registration.completePrevious');
       return;
     }
     setSubmitting(true);
@@ -31,7 +32,7 @@ export default function RegistrationTabs({ onLogin }) {
       await startSession(driverId);
     } catch (error) {
       console.warn('submitDriverRegistration', error);
-      setSubmitError('No pudimos enviar tu registro. Revisa tu conexión e inténtalo de nuevo.');
+      setSubmitError('registration.submitFailed');
     } finally {
       setSubmitting(false);
     }

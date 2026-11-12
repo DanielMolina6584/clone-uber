@@ -59,3 +59,26 @@ export async function createTestTrip(data) {
   });
   return ref.id;
 }
+
+export function updateTripStatus(tripId, status, extra = {}) {
+  return updateDoc(tripRef(tripId), { status, ...extra });
+}
+
+export function completeTrip(tripId, { distanceKm, durationMin, fare, commission, driverEarnings, commissionRate, route }) {
+  return updateDoc(tripRef(tripId), {
+    status: 'completed',
+    distanceKm,
+    durationMin,
+    fare,
+    commission,
+    driverEarnings,
+    commissionRate,
+    route,
+    completedAt: serverTimestamp(),
+  });
+}
+
+// Efectivo: el cobro se registra al terminar el viaje
+export function markCashReceived(tripId) {
+  return updateDoc(tripRef(tripId), { paymentStatus: 'cash', status: 'paid', paidAt: serverTimestamp() });
+}

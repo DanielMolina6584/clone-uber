@@ -308,3 +308,59 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   El conductor elige categoría, método de pago (Mercado Pago o Efectivo) y propina; no hay cobro real. Para recibirla hay que estar Disponible en Inicio. Las reglas de Firestore
   deben permitir crear en `trips` con `fare` entero, y por eso el monto se redondea antes de enviarse. Cuando exista la API real, esta pantalla se quita sin tocar el resto.
 - **Archivos afectados:** `src/screens/PassengerSimulatorScreen.js`, `src/services/maps.js`, `src/utils/geo.js`, `src/services/trips.js`, `src/navigation/AppDrawer.js`, `src/config/app.js`.
+
+## #023 · 2026-11-12 10:10 (UTC-5) · Viaje activo: ir por el pasajero, llevarlo al destino y ver el carro moverse
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Al aceptar una solicitud, ¿cómo llevo al conductor por los estados del viaje (en camino, en curso, terminado), muestro el carro moviéndose por la ruta hasta la recogida y luego hasta el destino, y calculo la tarifa final?
+- **Respuesta:** Aceptar sigue siendo una transacción dentro de los 15 s de la tarjeta. `useActiveTrip` escucha los viajes del conductor y devuelve el que está en `accepted`, `driver_arriving` o
+  `in_progress`; `MapScreen` abre `ActiveTripScreen` una sola vez por viaje (también al reabrir la app con un viaje en curso) y deja de escuchar solicitudes mientras haya uno activo, así solo se atiende un
+  viaje a la vez. La navegación raíz pasó a un Stack (`Main` con el Drawer, `ActiveTrip` y `TripSummary`) para que el viaje cubra todo el menú. Al entrar, la pantalla pide la ruta una sola vez a la recogida
+  (Distance Matrix para la llegada estimada y Directions para el trazado; Google si hay llave y OSRM si no) y pasa el viaje a `driver_arriving`. `useRouteSimulation` mueve el carro con `requestAnimationFrame` sobre la
+  polilínea a 120 km/h (`simulationSpeedKmh`), girando suave con `smoothAngle` y publicando la posición en Firestore cada 4 s. Al llegar se habilita "Pasajero a bordo" (`in_progress`), se pide la ruta al destino y el carro
+  vuelve a salir; al llegar se habilita "Finalizar viaje", que recalcula la tarifa con `calculateFare` usando la distancia y duración de la ruta recorrida, guarda `commissionRate` y la polilínea codificada y pasa a
+  `completed`. Los botones quedan grises hasta llegar pero siguen siendo tocables, así que cada manejador valida `arrived` y `busy` para no avanzar antes de tiempo ni enviar dos veces. Se puede cancelar antes de iniciar el
+  viaje, con confirmación. La pantalla de resumen muestra tarifa, comisión, propina y ganancia neta; el cobro (efectivo o pasarela) aún no se registra. La simulación es el único modo: no se sigue el GPS real.
+- **Archivos afectados:** `src/screens/ActiveTripScreen.js`, `src/screens/TripSummaryScreen.js`, `src/screens/MapScreen.js`, `src/navigation/RootNavigator.js`, `src/hooks/useActiveTrip.js`, `src/hooks/useRouteSimulation.js`, `src/components/CarMarker.js`, `src/services/trips.js`, `src/config/app.js`.
+
+## #024 · 2026-11-12 10:28 (UTC-5) · Selectores más pequeños, pasajero cerca del conductor y ubicación al instante
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Los selectores se ven muy grandes en toda la app, el pasajero simulado debe aparecer cerca de la ubicación real del conductor y la ubicación tarda en cargar al iniciar sesión. ¿Cómo lo ajusto?
+- **Respuesta:** Tamaño: el `Picker` nativo de iOS es una rueda de unos 216 px, por eso `SelectField` ahora es un campo de 44 px que muestra la opción elegida y abre la rueda en una hoja inferior (`Modal`)
+  con un botón "Listo"; en Android mantiene el desplegable con la misma altura. `SegmentedControl`, `FormField` y `DateField` bajaron a 34 y 44 px con letra de 13 a 15, y se quitó la opción `compact` porque ahora
+  es el tamaño base. Pasajero: el simulador usaba su propia suscripción de ubicación, que al abrir la pantalla aún estaba vacía y caía en Bogotá; ahora lee la ubicación compartida, genera la recogida a 300 m a 1 km
+  del conductor (ajustada a la carretera) y el destino a 2 a 5 km de la recogida, y el carro sale de la posición real del conductor hacia la recogida y luego al destino. Sin ubicación el simulador espera, y solo
+  usa Bogotá si el permiso fue denegado. Velocidad de carga: `useDriverLocation` pasa a un `LocationProvider` único que envuelve la app del conductor aprobado y primero entrega
+  `getLastKnownPositionAsync` (inmediata) y la lectura de `getCurrentPositionAsync`, antes de que llegue el primer evento de `watchPositionAsync`; el mapa se abre ya centrado si hay posición. La escritura
+  de la ubicación en Firestore se separó en `usePublishLocation`, que mantiene el límite de una escritura cada 4 s. Límite: sin una posición previa en el sistema, la primera lectura real puede tardar unos segundos.
+- **Archivos afectados:** `src/components/SelectField.js`, `src/components/SegmentedControl.js`, `src/components/FormField.js`, `src/components/DateField.js`, `src/context/LocationContext.js`, `src/hooks/useDriverLocation.js`, `src/hooks/usePublishLocation.js`, `src/navigation/RootNavigator.js`, `src/screens/MapScreen.js`, `src/screens/PassengerSimulatorScreen.js`, `src/screens/ActiveTripScreen.js`, `src/screens/HistoryScreen.js`.
+
+## #025 · 2026-11-12 11:13 (UTC-5) · Toda la app en español o inglés y estado del viaje en el historial
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Si el conductor elige inglés, ¿cómo traduzco toda la interfaz sin instalar librerías, incluyendo los errores de validación? Además, en el historial todos los viajes mostraban "Pendiente" y los cancelados no aparecían.
+- **Respuesta:** Traducción: dos diccionarios planos (`src/i18n/es.js` y `en.js`, 240 claves en inglés como `validation.required`) y `translate(language, key, params)`, que interpola `{{name}}`, usa español como respaldo, devuelve la propia
+  clave si no existe y devuelve `''` para una clave vacía, de modo que `t(error)` sirve aunque no haya error. `LanguageProvider` guarda el idioma en estado, lo restaura de AsyncStorage al abrir y lo guarda al cambiarlo; `useLanguage()` entrega `{ language, setLanguage, t }`.
+  Al elegir English en el registro o en el perfil se llama `setLanguage` y toda la interfaz cambia al instante. Con sesión iniciada, un `LanguageSync` aplica `driver.personal.language` solo cuando ese valor cambia, para no pisar un cambio aún sin guardar. Los validadores
+  dejaron de devolver texto: devuelven claves y cada pantalla traduce en `errorOf` (así no cambió ninguna regla de validación). Las opciones (géneros, colores, categorías) guardan `labelKey` y `SelectField` y `SegmentedControl` la traducen; los valores guardados en Firestore
+  no cambian. Los hooks y servicios guardan claves de error y quien las muestra las traduce. `formatDistance` usa coma en español y punto en inglés, y `formatDateTime` usa "p. m." o "PM" según el idioma. Verificado con un script que comprueba que ambos diccionarios tienen las mismas
+  claves y los mismos marcadores, y que no hay claves usadas sin definir ni definidas sin usar, más pruebas en Node de los formatos y los validadores. Historial: "Pendiente" es correcto mientras el cobro no exista, porque esa insignia es el estado del PAGO y todavía no se registra ningún cobro. Faltaba el estado
+  del VIAJE, así que se agregó `tripStatusLabel` (Completado, Pagado o Cancelado) con su insignia `TripStatusBadge`, y `filterHistory`, que además de `completed` y `paid` incluye `cancelled`. Un cancelado se fecha por `cancelledAt` (ahora se guarda al cancelar) o, si falta, por `createdAt`, se muestra con
+  la tarifa tachada, sin ganancia neta ni insignia de pago, y su detalle indica quién canceló (`cancelledBy`). `filterTrips` e `isFinished` no cambiaron: ganancias y saldo siguen contando solo `completed` y `paid`, y una prueba en Node lo comprueba.
+- **Archivos afectados:** `src/i18n/*`, `src/context/LanguageContext.js`, `App.js`, `src/utils/validators.js`, `src/utils/formatters.js`, `src/utils/trips.js`, `src/data/options.js`, `src/components/TripStatusBadge.js`, `src/components/PaymentBadge.js`, `src/components/*` (selectores, fotos, fechas, tarjeta de solicitud), `src/screens/*`, `src/navigation/*`, `src/hooks/*`, `src/context/SessionContext.js`.
+
+## #026 · 2026-11-12 11:14 (UTC-5) · Insignia de pago con método y estado, y efectivo cobrado al terminar el viaje
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** En el historial la insignia de pago solo decía "Pendiente" y no se entendía si hablaba del viaje o del pago. ¿Cómo muestro el método y el estado del pago (Efectivo: pagado, Mercado Pago: no pagado) y cómo hago que un viaje en efectivo quede pagado al terminar?
+- **Respuesta:** `paymentState(trip)` reduce el pago a tres estados: `paid` (el viaje está en `paid`, o `paymentStatus` es `approved` o `cash`), `rejected` (la pasarela lo rechazó) y `pending` (aún sin cobrar). `paymentLabel` los combina con el método
+  en una clave de traducción (`payment.cash.paid`, `payment.mercadopago.pending`, ...), con textos como "Efectivo: pagado", "Efectivo: por cobrar" o "Mercado Pago: no pagado", y `PaymentBadge` elige el color por estado (verde pagado, gris pendiente, rojo rechazado), distinto de
+  la insignia del estado del viaje. En efectivo no hay pasarela que confirme, así que al finalizar el viaje la app hace una segunda escritura, `markCashReceived` (`paymentStatus: 'cash'`, `status: 'paid'`, `paidAt`); son dos `updateDoc` porque las reglas de Firestore solo permiten pasar de
+  `in_progress` a `completed` y de ahí a `paid`. Si la segunda escritura falla, el viaje queda `completed` con "Efectivo: por cobrar" y se registra el error. El saldo no cambia de criterio: un viaje en efectivo cobrado resta la comisión. Con Mercado Pago y Stripe el pago
+  sigue "no pagado" hasta que exista el cobro por pasarela. Una prueba en Node cubrió los estados por método y el saldo, y detectó una referencia a una constante que ya no existía.
+- **Archivos afectados:** `src/utils/trips.js`, `src/components/PaymentBadge.js`, `src/services/trips.js`, `src/screens/ActiveTripScreen.js`, `src/i18n/es.js`, `src/i18n/en.js`.

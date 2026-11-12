@@ -7,6 +7,7 @@ import FormField from '../components/FormField';
 import PhotoPicker from '../components/PhotoPicker';
 import PrimaryButton from '../components/PrimaryButton';
 import RegistrationHeader from '../components/RegistrationHeader';
+import { useLanguage } from '../context/LanguageContext';
 import { PRICING } from '../config/pricing';
 import { colors, spacing, typography } from '../theme';
 import {
@@ -51,6 +52,7 @@ const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate()
 const commissionPercent = Math.round(PRICING.commissionRate * 100);
 
 export default function DocumentsScreen({ vehicleYear, onBack, onSubmit, submitting, submitError }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(INITIAL_FORM);
   const [touched, setTouched] = useState({});
 
@@ -62,7 +64,7 @@ export default function DocumentsScreen({ vehicleYear, onBack, onSubmit, submitt
 
   const setField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const touch = (field) => setTouched((prev) => ({ ...prev, [field]: true }));
-  const errorOf = (field) => (touched[field] ? validators[field](form[field]) : '');
+  const errorOf = (field) => t(touched[field] ? validators[field](form[field]) : '');
   const onlyDigits = (value) => value.replace(/\D/g, '');
 
   const isValid = useMemo(
@@ -84,7 +86,7 @@ export default function DocumentsScreen({ vehicleYear, onBack, onSubmit, submitt
   const photoProps = (field, title) => ({
     variant: 'card',
     title,
-    label: 'Toma o elige una foto legible del documento',
+    label: t('documents.photoHint'),
     uri: form[field],
     onChange: (uri) => {
       setField(field, uri);
@@ -110,13 +112,13 @@ export default function DocumentsScreen({ vehicleYear, onBack, onSubmit, submitt
           <RegistrationHeader
             step={3}
             onBack={onBack}
-            title="Documentos y pagos"
-            subtitle="Sube tus documentos vigentes y dinos dónde recibir tus pagos."
+            title={t('documents.title')}
+            subtitle={t('documents.subtitle')}
           />
 
-          <Text style={styles.section}>Licencia de conducción</Text>
+          <Text style={styles.section}>{t('documents.license')}</Text>
           <FormField
-            label="Número de licencia"
+            label={t('documents.licenseNumber')}
             value={form.licenseNumber}
             onChangeText={(v) => setField('licenseNumber', onlyDigits(v))}
             onBlur={() => touch('licenseNumber')}
@@ -124,28 +126,28 @@ export default function DocumentsScreen({ vehicleYear, onBack, onSubmit, submitt
             keyboardType="numeric"
             maxLength={10}
           />
-          <PhotoPicker {...photoProps('licensePhotoUri', 'Foto de la licencia')} />
-          <DateField {...dateProps('licenseExpiry', 'Fecha de vencimiento de la licencia')} />
+          <PhotoPicker {...photoProps('licensePhotoUri', t('documents.licensePhoto'))} />
+          <DateField {...dateProps('licenseExpiry', t('documents.licenseExpiry'))} />
 
-          <Text style={styles.section}>SOAT</Text>
-          <PhotoPicker {...photoProps('soatPhotoUri', 'Foto del SOAT')} />
-          <DateField {...dateProps('soatExpiry', 'Fecha de vencimiento del SOAT')} />
+          <Text style={styles.section}>{t('documents.soat')}</Text>
+          <PhotoPicker {...photoProps('soatPhotoUri', t('documents.soatPhoto'))} />
+          <DateField {...dateProps('soatExpiry', t('documents.soatExpiry'))} />
 
-          <Text style={styles.section}>Revisión técnico-mecánica</Text>
+          <Text style={styles.section}>{t('documents.tech')}</Text>
           {techRequired ? (
             <>
-              <PhotoPicker {...photoProps('techInspectionPhotoUri', 'Foto de la revisión técnico-mecánica')} />
-              <DateField {...dateProps('techInspectionExpiry', 'Fecha de vencimiento de la revisión')} />
+              <PhotoPicker {...photoProps('techInspectionPhotoUri', t('documents.techPhoto'))} />
+              <DateField {...dateProps('techInspectionExpiry', t('documents.techExpiry'))} />
             </>
           ) : (
             <Text style={styles.note}>
-              {`Tu vehículo (${vehicleYear}) aún no requiere revisión técnico-mecánica.`}
+              {t('documents.techNotRequired', { year: vehicleYear })}
             </Text>
           )}
 
-          <Text style={styles.section}>Pagos</Text>
+          <Text style={styles.section}>{t('documents.payments')}</Text>
           <FormField
-            label="Correo de tu cuenta de Mercado Pago"
+            label={t('documents.mercadoPagoEmail')}
             value={form.mercadoPagoEmail}
             onChangeText={(v) => setField('mercadoPagoEmail', v)}
             onBlur={() => touch('mercadoPagoEmail')}
@@ -155,7 +157,7 @@ export default function DocumentsScreen({ vehicleYear, onBack, onSubmit, submitt
             autoCorrect={false}
           />
           <CheckboxField
-            label={`Acepto los términos y condiciones. La plataforma cobra una comisión del ${commissionPercent} % sobre la tarifa de cada viaje; las propinas son 100 % para mí.`}
+            label={t('documents.terms', { percent: commissionPercent })}
             value={form.acceptedTerms}
             onChange={(v) => {
               setField('acceptedTerms', v);
@@ -166,11 +168,11 @@ export default function DocumentsScreen({ vehicleYear, onBack, onSubmit, submitt
 
           <View style={styles.footer}>
             <PrimaryButton
-              title={submitting ? 'Enviando…' : 'Enviar registro'}
+              title={submitting ? t('documents.submitting') : t('documents.submit')}
               onPress={handleSubmit}
               disabled={!isValid || submitting}
             />
-            {submitError ? <Text style={styles.submitError}>{submitError}</Text> : null}
+            {submitError ? <Text style={styles.submitError}>{t(submitError)}</Text> : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

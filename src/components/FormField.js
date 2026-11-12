@@ -16,17 +16,18 @@ export default function FormField({ label, error, ...inputProps }) {
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: spacing.md },
-  label: { ...typography.etiqueta, color: colors.texto, marginBottom: spacing.sm },
+  container: { marginBottom: spacing.sm },
+  label: { ...typography.etiqueta, fontSize: 13, color: colors.texto, marginBottom: spacing.xs },
   input: {
     ...typography.texto,
+    fontSize: 15,
     color: colors.texto,
     backgroundColor: colors.superficie,
     borderWidth: 2,
     borderColor: colors.superficie,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    height: 52,
+    height: 44,
   },
   inputError: { borderColor: colors.error },
   error: { ...typography.error, color: colors.error, marginTop: spacing.xs },

@@ -1,24 +1,24 @@
-const REQUIRED = 'Este campo es obligatorio';
+const REQUIRED = 'validation.required';
 
 export function validateFullName(value) {
   const name = value.trim();
   if (!name) return REQUIRED;
-  if (name.length > 50) return 'Máximo 50 caracteres';
-  if (!/^\p{L}+(?: \p{L}+)*$/u.test(name)) return 'Solo letras y espacios';
+  if (name.length > 50) return 'validation.max50';
+  if (!/^\p{L}+(?: \p{L}+)*$/u.test(name)) return 'validation.lettersOnly';
   return '';
 }
 
 export function validateIdNumber(value) {
   if (!value) return REQUIRED;
-  if (!/^\d+$/.test(value)) return 'Solo números';
-  if (value.length < 6 || value.length > 10) return 'Debe tener entre 6 y 10 dígitos';
+  if (!/^\d+$/.test(value)) return 'validation.digitsOnly';
+  if (value.length < 6 || value.length > 10) return 'validation.between6and10';
   return '';
 }
 
 export function validatePhone(value) {
   if (!value) return REQUIRED;
-  if (!/^\d+$/.test(value)) return 'Solo números';
-  if (value.length !== 10) return 'Debe tener 10 dígitos';
+  if (!/^\d+$/.test(value)) return 'validation.digitsOnly';
+  if (value.length !== 10) return 'validation.tenDigits';
   return '';
 }
 
@@ -35,33 +35,33 @@ export function getAge(birthDate, today = new Date()) {
 
 export function validateBirthDate(value) {
   if (!value) return REQUIRED;
-  if (getAge(value) < MIN_AGE) return 'Debes ser mayor de 18 años';
+  if (getAge(value) < MIN_AGE) return 'validation.minAge';
   return '';
 }
 
 export function validateGender(value) {
-  return value ? '' : 'Selecciona una opción';
+  return value ? '' : 'validation.selectOption';
 }
 
 export function validateEmail(value) {
   const email = value.trim();
   if (!email) return REQUIRED;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return 'Ingresa un correo válido';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return 'validation.invalidEmail';
   return '';
 }
 
 export function validateLanguage(value) {
-  return value ? '' : 'Selecciona un idioma';
+  return value ? '' : 'validation.selectLanguage';
 }
 
 export function validatePhoto(value) {
-  return value ? '' : 'La foto de perfil es obligatoria';
+  return value ? '' : 'validation.profilePhoto';
 }
 
 const VEHICLE_TEXT_MAX = 30;
 
 export function validateCategory(value) {
-  return value ? '' : 'Selecciona una categoría';
+  return value ? '' : 'validation.selectCategory';
 }
 
 export function normalizePlate(value) {
@@ -71,14 +71,14 @@ export function normalizePlate(value) {
 export function validatePlate(value) {
   const plate = normalizePlate(value);
   if (!plate) return REQUIRED;
-  if (!/^[A-Z]{3}\d{3}$/.test(plate)) return 'Formato inválido, usa ABC123';
+  if (!/^[A-Z]{3}\d{3}$/.test(plate)) return 'validation.invalidPlate';
   return '';
 }
 
 export function validateVehicleText(value) {
   const text = value.trim();
   if (!text) return REQUIRED;
-  if (text.length > VEHICLE_TEXT_MAX) return 'Máximo 30 caracteres';
+  if (text.length > VEHICLE_TEXT_MAX) return 'validation.max30';
   return '';
 }
 
@@ -87,26 +87,26 @@ const XL_MIN_CAPACITY = 6;
 
 export function validateYear(value) {
   if (!value) return REQUIRED;
-  if (!/^\d{4}$/.test(value)) return 'Debe tener 4 dígitos';
-  if (Number(value) > new Date().getFullYear()) return 'No puede ser mayor al año actual';
+  if (!/^\d{4}$/.test(value)) return 'validation.fourDigits';
+  if (Number(value) > new Date().getFullYear()) return 'validation.futureYear';
   return '';
 }
 
 export function validateColor(value) {
-  return value ? '' : 'Selecciona un color';
+  return value ? '' : 'validation.selectColor';
 }
 
 export function validateCapacity(value, form = {}) {
   if (!value) return REQUIRED;
-  if (!/^\d+$/.test(value)) return 'Solo números';
+  if (!/^\d+$/.test(value)) return 'validation.digitsOnly';
   const capacity = Number(value);
-  if (capacity < 1) return 'Debe ser al menos 1 pasajero';
-  if (form.category === 'xl' && capacity < XL_MIN_CAPACITY) return 'La categoría XL exige mínimo 6 pasajeros';
+  if (capacity < 1) return 'validation.minCapacity';
+  if (form.category === 'xl' && capacity < XL_MIN_CAPACITY) return 'validation.xlCapacity';
   return '';
 }
 
 export function validateVehiclePhoto(value) {
-  return value ? '' : 'La foto del vehículo es obligatoria';
+  return value ? '' : 'validation.vehiclePhoto';
 }
 
 // AI-assisted: see BITACORA.md #010
@@ -120,8 +120,8 @@ export function isTechInspectionRequired(vehicleYear, today = new Date()) {
 
 export function validateLicenseNumber(value) {
   if (!value) return REQUIRED;
-  if (!/^\d+$/.test(value)) return 'Solo números';
-  if (value.length < 6 || value.length > 10) return 'Debe tener entre 6 y 10 dígitos';
+  if (!/^\d+$/.test(value)) return 'validation.digitsOnly';
+  if (value.length < 6 || value.length > 10) return 'validation.between6and10';
   return '';
 }
 
@@ -129,14 +129,14 @@ export function validateExpiryDate(value, today = new Date()) {
   if (!value) return REQUIRED;
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const expiry = new Date(value.getFullYear(), value.getMonth(), value.getDate());
-  if (expiry <= startOfToday) return 'Debe ser posterior a hoy';
+  if (expiry <= startOfToday) return 'validation.afterToday';
   return '';
 }
 
 export function validateDocumentPhoto(value) {
-  return value ? '' : 'La foto del documento es obligatoria';
+  return value ? '' : 'validation.documentPhoto';
 }
 
 export function validateTerms(value) {
-  return value ? '' : 'Debes aceptar los términos para continuar';
+  return value ? '' : 'validation.terms';
 }

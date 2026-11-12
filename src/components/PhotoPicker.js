@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../context/LanguageContext';
 import { colors, radius, spacing, typography } from '../theme';
 
 const ASPECTS = { avatar: [1, 1], card: [4, 3] };
 
-export default function PhotoPicker({ label, uri, onChange, error, title = 'Foto de perfil', variant = 'avatar' }) {
+export default function PhotoPicker({ label, uri, onChange, error, title, variant = 'avatar' }) {
+  const { t } = useLanguage();
+  const photoTitle = title || t('photo.defaultTitle');
   const [permissionError, setPermissionError] = useState('');
   const isCard = variant === 'card';
   const pickerOptions = { mediaTypes: ['images'], allowsEditing: true, aspect: ASPECTS[variant], quality: 0.7 };
@@ -18,7 +21,7 @@ export default function PhotoPicker({ label, uri, onChange, error, title = 'Foto
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      setPermissionError('Permite el acceso a la cámara en los ajustes del teléfono');
+      setPermissionError(t('photo.cameraDenied'));
       return;
     }
     setPermissionError('');
@@ -31,17 +34,17 @@ export default function PhotoPicker({ label, uri, onChange, error, title = 'Foto
   };
 
   const openOptions = () =>
-    Alert.alert(title, 'Elige de dónde quieres tomar la foto', [
-      { text: 'Cámara', onPress: takePhoto },
-      { text: 'Galería', onPress: chooseFromGallery },
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert(photoTitle, t('photo.chooseSource'), [
+      { text: t('photo.camera'), onPress: takePhoto },
+      { text: t('photo.gallery'), onPress: chooseFromGallery },
+      { text: t('photo.cancel'), style: 'cancel' },
     ]);
 
   const message = error || permissionError;
 
   return (
     <View style={[styles.container, isCard ? styles.containerCard : null]}>
-      {isCard ? <Text style={styles.cardLabel}>{title}</Text> : null}
+      {isCard ? <Text style={styles.cardLabel}>{photoTitle}</Text> : null}
       <Pressable
         style={[isCard ? styles.card : styles.avatar, message ? styles.avatarError : null]}
         onPress={openOptions}
@@ -57,7 +60,7 @@ export default function PhotoPicker({ label, uri, onChange, error, title = 'Foto
           <Ionicons name="camera" size={18} color={colors.textoPrimario} />
         </View>
       </Pressable>
-      <Text style={[styles.label, isCard ? styles.labelCard : null]}>{uri ? 'Cambiar foto' : label}</Text>
+      <Text style={[styles.label, isCard ? styles.labelCard : null]}>{uri ? t('photo.change') : label}</Text>
       {message ? <Text style={[styles.error, isCard ? styles.errorCard : null]}>{message}</Text> : null}
     </View>
   );

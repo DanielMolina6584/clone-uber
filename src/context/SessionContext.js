@@ -45,7 +45,7 @@ export function SessionProvider({ children }) {
       },
       (err) => {
         console.warn('subscribeDriver', err);
-        setError('No pudimos actualizar tu cuenta. Revisa tu conexión.');
+        setError('session.updateFailed');
         setWaitingDriver(false);
       }
     );

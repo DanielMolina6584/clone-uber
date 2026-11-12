@@ -21,7 +21,7 @@ export function useTripRequests({ driverId, enabled }) {
       },
       (err) => {
         console.warn('useTripRequests', err);
-        setError('No pudimos escuchar solicitudes nuevas.');
+        setError('request.listenFailed');
       }
     );
   }, [enabled, driverId]);

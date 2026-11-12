@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { APP_CONFIG } from '../config/app';
+import { useLanguage } from '../context/LanguageContext';
 import { colors, radius, spacing, typography } from '../theme';
 import { formatCurrency, formatDistance, formatDuration } from '../utils/formatters';
 import PrimaryButton from './PrimaryButton';
 
 export default function TripRequestCard({ trip, onAccept, onReject, busy, error }) {
+  const { t, language } = useLanguage();
   const [secondsLeft, setSecondsLeft] = useState(APP_CONFIG.requestTimeoutSeconds);
   const finished = useRef(false);
 
@@ -39,30 +41,30 @@ export default function TripRequestCard({ trip, onAccept, onReject, busy, error 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>Nueva solicitud</Text>
-        <View style={styles.timer} accessibilityLabel={`Tiempo restante ${secondsLeft} segundos`}>
+        <Text style={styles.title}>{t('request.title')}</Text>
+        <View style={styles.timer} accessibilityLabel={t('request.timeLeft', { seconds: secondsLeft })}>
           <Text style={styles.timerText}>{secondsLeft}</Text>
         </View>
       </View>
 
-      <Text style={styles.label}>Recoger en</Text>
+      <Text style={styles.label}>{t('request.pickup')}</Text>
       <Text style={styles.address} numberOfLines={2}>{trip.origin?.address}</Text>
-      <Text style={[styles.label, styles.spaced]}>Destino</Text>
+      <Text style={[styles.label, styles.spaced]}>{t('request.destination')}</Text>
       <Text style={styles.address} numberOfLines={2}>{trip.destination?.address}</Text>
 
       <View style={styles.summary}>
-        <Text style={styles.detail}>{formatDistance(trip.distanceKm)} · {formatDuration(trip.durationMin)}</Text>
+        <Text style={styles.detail}>{formatDistance(trip.distanceKm, language)} · {formatDuration(trip.durationMin)}</Text>
         <Text style={styles.fare}>{formatCurrency(trip.fare)}</Text>
       </View>
-      <Text style={styles.net}>Ganancia neta: {formatCurrency(trip.driverEarnings)}</Text>
+      <Text style={styles.net}>{t('request.net', { amount: formatCurrency(trip.driverEarnings) })}</Text>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={styles.error}>{t(error)}</Text> : null}
       <View style={styles.actions}>
         <View style={styles.action}>
-          <PrimaryButton title="Rechazar" variant="secondary" onPress={handleReject} />
+          <PrimaryButton title={t('request.reject')} variant="secondary" onPress={handleReject} />
         </View>
         <View style={styles.action}>
-          <PrimaryButton title={busy ? 'Aceptando...' : 'Aceptar'} onPress={handleAccept} />
+          <PrimaryButton title={busy ? t('request.accepting') : t('request.accept')} onPress={handleAccept} />
         </View>
       </View>
     </View>

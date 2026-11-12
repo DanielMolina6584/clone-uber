@@ -8,8 +8,8 @@ import PrimaryButton from '../components/PrimaryButton';
 import RegistrationHeader from '../components/RegistrationHeader';
 import SegmentedControl from '../components/SegmentedControl';
 import SelectField from '../components/SelectField';
+import { useLanguage } from '../context/LanguageContext';
 import { GENDERS, LANGUAGES } from '../data/options';
-import { getLanguage, saveLanguage } from '../services/preferences';
 import { colors, spacing, typography } from '../theme';
 import {
   validateBirthDate,
@@ -48,22 +48,18 @@ const today = new Date();
 const eighteenYearsAgo = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
 
 export default function PersonalDataScreen({ onContinue, onLogin }) {
-  const [form, setForm] = useState(INITIAL_FORM);
+  const { language, setLanguage, t } = useLanguage();
+  const [form, setForm] = useState({ ...INITIAL_FORM, language });
   const [touched, setTouched] = useState({});
 
+  // El idioma restaurado de AsyncStorage llega después del primer render
   useEffect(() => {
-    let active = true;
-    getLanguage().then((stored) => {
-      if (active && LANGUAGES.some((option) => option.value === stored)) setField('language', stored);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+    setField('language', language);
+  }, [language]);
 
   const setField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const touch = (field) => setTouched((prev) => ({ ...prev, [field]: true }));
-  const errorOf = (field) => (touched[field] ? validators[field](form[field]) : '');
+  const errorOf = (field) => t(touched[field] ? validators[field](form[field]) : '');
   const onlyDigits = (value) => value.replace(/\D/g, '');
 
   const isValid = useMemo(
@@ -82,12 +78,12 @@ export default function PersonalDataScreen({ onContinue, onLogin }) {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <RegistrationHeader
             step={1}
-            title="Datos personales"
-            subtitle="Cuéntanos quién eres para empezar a conducir."
+            title={t('personal.title')}
+            subtitle={t('personal.subtitle')}
           />
 
           <PhotoPicker
-            label="Agregar foto de perfil"
+            label={t('personal.photo')}
             uri={form.photoUri}
             onChange={(uri) => {
               setField('photoUri', uri);
@@ -96,7 +92,7 @@ export default function PersonalDataScreen({ onContinue, onLogin }) {
             error={errorOf('photoUri')}
           />
           <FormField
-            label="Nombre completo"
+            label={t('personal.fullName')}
             value={form.fullName}
             onChangeText={(v) => setField('fullName', v)}
             onBlur={() => touch('fullName')}
@@ -105,7 +101,7 @@ export default function PersonalDataScreen({ onContinue, onLogin }) {
             autoCapitalize="words"
           />
           <FormField
-            label="Documento de identidad"
+            label={t('personal.idNumber')}
             value={form.idNumber}
             onChangeText={(v) => setField('idNumber', onlyDigits(v))}
             onBlur={() => touch('idNumber')}
@@ -114,7 +110,7 @@ export default function PersonalDataScreen({ onContinue, onLogin }) {
             maxLength={10}
           />
           <FormField
-            label="Número de celular"
+            label={t('personal.phone')}
             value={form.phone}
             onChangeText={(v) => setField('phone', onlyDigits(v))}
             onBlur={() => touch('phone')}
@@ -123,7 +119,7 @@ export default function PersonalDataScreen({ onContinue, onLogin }) {
             maxLength={10}
           />
           <DateField
-            label="Fecha de nacimiento"
+            label={t('personal.birthDate')}
             value={form.birthDate}
             onChange={(date) => setField('birthDate', date)}
             onClose={() => touch('birthDate')}
@@ -132,7 +128,7 @@ export default function PersonalDataScreen({ onContinue, onLogin }) {
             initialDate={eighteenYearsAgo}
           />
           <SelectField
-            label="Género"
+            label={t('personal.gender')}
             value={form.gender}
             options={GENDERS}
             onChange={(v) => {
@@ -142,7 +138,7 @@ export default function PersonalDataScreen({ onContinue, onLogin }) {
             error={errorOf('gender')}
           />
           <FormField
-            label="Correo electrónico"
+            label={t('personal.email')}
             value={form.email}
             onChangeText={(v) => setField('email', v)}
             onBlur={() => touch('email')}
@@ -152,20 +148,20 @@ export default function PersonalDataScreen({ onContinue, onLogin }) {
             autoCorrect={false}
           />
           <SegmentedControl
-            label="Idioma"
+            label={t('personal.language')}
             options={LANGUAGES}
             value={form.language}
             onChange={(v) => {
               setField('language', v);
-              saveLanguage(v);
+              setLanguage(v);
             }}
           />
 
           <View style={styles.footer}>
-            <PrimaryButton title="Continuar" onPress={handleContinue} disabled={!isValid} />
+            <PrimaryButton title={t('common.continue')} onPress={handleContinue} disabled={!isValid} />
             {onLogin ? (
               <Text style={styles.link} onPress={onLogin} accessibilityRole="link">
-                Ya tengo cuenta
+                {t('registration.haveAccount')}
               </Text>
             ) : null}
           </View>

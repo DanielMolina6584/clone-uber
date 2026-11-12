@@ -10,18 +10,19 @@ export function formatCurrency(value) {
   return `${rounded < 0 ? '-' : ''}$ ${digits}`;
 }
 
-export function formatDistance(km) {
-  return `${(km || 0).toFixed(1).replace('.', ',')} km`;
+export function formatDistance(km, language = 'es') {
+  const text = (km || 0).toFixed(1);
+  return `${language === 'en' ? text : text.replace('.', ',')} km`;
 }
 
 export function formatDuration(min) {
   return `${Math.round(min || 0)} min`;
 }
 
-export function formatDateTime(date) {
+export function formatDateTime(date, language = 'es') {
   if (!date) return '';
   const hours = date.getHours();
   const minutes = String(date.getMinutes()).padStart(2, '0');
-  const suffix = hours >= 12 ? 'p. m.' : 'a. m.';
+  const suffix = language === 'en' ? (hours >= 12 ? 'PM' : 'AM') : hours >= 12 ? 'p. m.' : 'a. m.';
   return `${formatDate(date)} ${hours % 12 || 12}:${minutes} ${suffix}`;
 }
