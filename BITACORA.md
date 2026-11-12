@@ -15,3 +15,374 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
 ```
 
 ---
+
+## #002 · 2026-10-30 12:15 (UTC-5) · Estado y errores por campo en un formulario sin librerías
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Para la pestaña de Datos personales sin usar Formik ni react-hook-form, ¿cómo estructuro el estado y las validaciones para mostrar
+  el error debajo de cada campo sin que aparezcan antes de que el usuario interactúe, y sin disparar un `Alert`?
+- **Respuesta:** Usa dos `useState`: `form` (valores) y `touched` (qué campos ya perdieron el foco). El error no se guarda en el estado: se deriva en
+  render con `touched[field] ? validators[field](form[field]) : ''`, así nunca queda desincronizado con el valor. Las reglas van en funciones puras
+  `(value) => string` en `utils/validators.js` (cadena vacía = válido), que luego se reutilizan para habilitar el botón "Enviar registro" cuando las
+  tres pestañas sean válidas. Marca `touched` en `onBlur`. Para el nombre, `/^\p{L}+(?: \p{L}+)*$/u` acepta tildes y ñ, no admite espacios dobles ni
+  espacios sueltos al inicio o al final (haz `trim()` antes). Extrae un `FormField` que reciba `error` y propague el resto de props al `TextInput`.
+- **Archivos afectados:** `App.js`, `src/theme/index.js`, `src/utils/validators.js`, `src/components/FormField.js`, `src/screens/PersonalDataScreen.js`.
+
+## #003 · 2026-10-30 12:37 (UTC-5) · Entrada numérica robusta en React Native
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** `keyboardType="numeric"` no me impide pegar letras ni, en algunos teclados, símbolos como `.` o `-`. ¿Cómo garantizo que documento y
+  celular contengan solo dígitos, y dónde conviene validar la longitud?
+- **Respuesta:** `keyboardType` solo sugiere el teclado; no restringe el valor. Sanea en `onChangeText` con `value.replace(/\D/g, '')` antes de
+  guardar en el estado, y usa `maxLength` como tope (10 en ambos). El saneado evita estados inválidos; la longitud mínima/exacta (documento 6–10,
+  celular 10) se valida aparte en `validators.js`, porque `maxLength` no impide valores cortos. Documento y celular se guardan como `string`, no como
+  número, para no perder ceros a la izquierda ni acercarse al límite de enteros seguros. Para el celular `phone-pad` es suficiente en Android e iOS.
+- **Archivos afectados:** `src/screens/PersonalDataScreen.js`, `src/utils/validators.js`.
+
+## #004 · 2026-10-30 12:52 (UTC-5) · Pruebas de la lógica de validación sin emulador
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Sin emulador ni dispositivo, ¿cómo verifico las validaciones y que el bundle compila, y qué cobertura real me da eso?
+- **Respuesta:** Como `validators.js` no importa React ni React Native, se ejecuta directo con Node (ESM): importas las funciones y comparas contra
+  casos de borde: nombre con dígitos, vacío, de 51 caracteres, con tilde; documento de 5 y 10 dígitos; celular de 9 y 10. Para el bundle, `npx expo
+  export --platform android` corre Metro y Babel y detecta imports rotos y errores de sintaxis. No cubre render, teclado, `onBlur`, ni el
+  comportamiento de `KeyboardAvoidingView`; eso solo se ve en Expo Go o un development build.
+- **Archivos afectados:** Ninguno.
+
+## #005 · 2026-10-30 14:20 (UTC-5) · Validar mayoría de edad con DateTimePicker
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo valido que el conductor tenga al menos 18 años usando `@react-native-community/datetimepicker`, considerando que en Android abre
+  un diálogo y en iOS se renderiza inline?
+- **Respuesta:** Calcula la edad real, no solo la diferencia de años: resta los años y descuenta uno si el cumpleaños de este año aún no ha pasado
+  (comparando mes y día). Usa `maximumDate={new Date()}` para impedir fechas futuras e inicia el selector en hoy menos 18 años para no obligar a
+  scrollear décadas. En Android el componente funciona como diálogo: al montarlo se abre y `onChange` llega con `event.type` `'set'` o `'dismissed'`,
+  por lo que debes desmontarlo siempre y solo guardar la fecha cuando es `'set'`. En iOS con `display="spinner"` `onChange` se dispara en cada giro, así
+  que se guarda continuamente y se oculta al volver a pulsar el campo. Marca el campo como tocado al cerrar para mostrar el error.
+- **Archivos afectados:** `src/components/DateField.js`, `src/utils/validators.js`, `src/utils/formatters.js`.
+
+## #006 · 2026-10-30 14:50 (UTC-5) · Foto de perfil con expo-image-picker y permisos
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo implemento la foto de perfil obligatoria desde cámara o galería con `expo-image-picker` en SDK 58, y cómo manejo el permiso denegado
+  sin usar `Alert` para el error?
+- **Respuesta:** En SDK 58 `mediaTypes` es un arreglo de strings (`['images']`), no el enum `MediaTypeOptions` antiguo. Para la cámara llama a
+  `requestCameraPermissionsAsync()` y, si `granted` es falso, muestra el mensaje bajo el avatar en lugar de abrir un `Alert`. La galería usa el selector
+  del sistema y no requiere permiso de lectura. Con `allowsEditing: true`, `aspect: [1, 1]` y `quality: 0.7` obtienes un recorte cuadrado y una imagen
+  ligera. El resultado trae `canceled` y `assets[0].uri`; solo guarda la URI si no se canceló. El `Alert` se reserva para elegir el origen (cámara o
+  galería). La URI es local: subirla a Cloudinary y guardar la URL en Firestore queda como paso posterior. Los textos de permisos se declaran en el
+  plugin `expo-image-picker` de `app.json`.
+- **Archivos afectados:** `src/components/PhotoPicker.js`, `src/utils/validators.js`.
+
+## #007 · 2026-10-30 15:25 (UTC-5) · Tema visual estilo Uber con tokens reutilizables
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo aproximo el lenguaje visual de Uber (negro y blanco, inputs grises, botón negro) con `StyleSheet` y sin librerías de UI, de forma que
+  luego lo reutilicen las otras pestañas?
+- **Respuesta:** Centraliza todo en `theme/index.js`: negro `#000` como color primario y de texto, gris `#F3F3F3` para la superficie de los inputs,
+  rojo `#E11900` para errores y un gris `#E2E2E2` para el estado deshabilitado. Los campos son rellenos y sin borde (borde de 2 px del mismo color
+  que el fondo para que no cambie el tamaño al marcar error). Los botones son negros de 56 px de alto, y el selector segmentado marca la opción
+  activa en negro. Un indicador de tres barras ("Paso 1 de 3") refleja el flujo de registro. Cada control es un componente aislado (`FormField`,
+  `SelectField`, `DateField`, `SegmentedControl`, `PrimaryButton`) que lee solo del tema. Uber usa una tipografía propia no disponible aquí, así que se
+  usa la fuente del sistema en peso 600/700.
+- **Archivos afectados:** `src/theme/index.js`, `src/components/*`, `src/screens/PersonalDataScreen.js`.
+
+## #008 · 2026-10-30 15:58 (UTC-5) · Guardar el idioma en AsyncStorage
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo persisto la preferencia de idioma con `@react-native-async-storage/async-storage` sin bloquear el formulario si el almacenamiento falla?
+- **Respuesta:** Aísla el acceso en `services/preferences.js` con `getLanguage` y `saveLanguage` envueltas en `try/catch`: la preferencia es opcional y
+  un fallo de lectura o escritura no debe romper el registro. Lee el valor una vez al montar con un `useEffect` de dependencias vacías y una bandera
+  `active` en la función de limpieza para no actualizar el estado si la pantalla ya se desmontó. Valida que lo leído sea `es` o `en` antes de usarlo,
+  y guarda en el `onChange` del selector. Se usa una clave con prefijo (`@driver_language`) y solo se guarda el idioma, nunca datos sensibles, como pide
+  el PDF para AsyncStorage.
+- **Archivos afectados:** `src/services/preferences.js`, `src/screens/PersonalDataScreen.js`.
+
+## #009 · 2026-11-03 10:17 (UTC-5) · Completar la pestaña Vehículo: año, color, capacidad y foto
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Pregunta:** La pestaña Vehículo ya tiene categoría, placa, marca y modelo. ¿Cómo termino los campos que faltan según el PDF (año de 4 dígitos no
+  mayor al actual, color en lista, capacidad numérica donde XL exige mínimo 6 y foto obligatoria del vehículo donde se vea la placa) reutilizando
+  los componentes que ya existen?
+- **Respuesta:** Las reglas nuevas van como funciones puras en `validators.js` (`validateYear`, `validateColor`, `validateCapacity`,
+  `validateVehiclePhoto`). Como la capacidad depende de la categoría, los validadores reciben `(value, form)`; así, si el conductor cambia a XL, el error
+  de capacidad aparece sin lógica extra porque se deriva en render. Año y capacidad se sanean con `replace(/\D/g, '')` y se entregan como `Number` al
+  continuar. Los colores viven en `data/options.js`. `PhotoPicker` recibe `variant="card"` (rectángulo 4:3) y `title` para reutilizarlo con el vehículo
+  y los documentos sin duplicar la lógica de permisos.
+  Verificación: casos de borde de los validadores ejecutados con Node (año vacío, de 3 dígitos, futuro; XL con 5 y 6; capacidad 0) y
+  `npx expo export --platform android` sin errores. No probado aún en dispositivo.
+- **Archivos afectados:** `src/data/options.js`, `src/utils/validators.js`, `src/components/PhotoPicker.js`, `src/screens/VehicleScreen.js`.
+- **Commit:** b51f15c
+
+## #010 · 2026-11-03 11:21 (UTC-5) · Pestaña Documentos y pagos
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Pregunta:** ¿Cómo armo la pestaña 3 con licencia (número, foto y vencimiento), SOAT (foto y vencimiento), revisión técnico-mecánica solo si
+  aplica según el año del vehículo, correo de Mercado Pago y el checkbox de términos con el porcentaje de comisión visible?
+- **Respuesta:** Se crea `src/config/pricing.js` con los valores de la sección 5 del PDF y el checkbox lee de ahí el 20 %, para no escribirlo a mano.
+  Los vencimientos usan `validateExpiryDate`, que compara solo la fecha (sin hora) y exige que sea posterior a hoy; el `DateField` ahora acepta
+  `minimumDate` (mañana). La técnico-mecánica se exige si el vehículo tiene 6 años o más (`isTechInspectionRequired`, Decreto 019 de 2012 para
+  particulares); si no aplica, los campos se ocultan y salen del mapa de validadores con `useMemo`. Se agrega `CheckboxField` con
+  `accessibilityRole="checkbox"`. `RegistrationTabs` guarda los datos de cada paso para pasarle el año del vehículo a la pestaña 3.
+  Verificación: vencimientos hoy/ayer/mañana, técnico-mecánica 2020/2021 y número de licencia probados con Node.
+- **Archivos afectados:** `src/config/pricing.js`, `src/utils/validators.js`, `src/components/DateField.js`, `src/components/CheckboxField.js`,
+  `src/screens/DocumentsScreen.js`, `src/navigation/RegistrationTabs.js`.
+- **Commit:** 08a4eb7
+
+## #011 · 2026-11-03 12:40 (UTC-5) · Envío del registro y estado Pendiente de aprobación
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Opus 5.5)
+- **Pregunta:** Al pulsar "Enviar registro", ¿cómo subo las fotos y guardo al conductor en Firestore con estado Pendiente de aprobación, sin poner
+  llaves secretas en la app y mostrando el error sin `Alert`?
+- **Respuesta:** Las fotos se suben a Cloudinary con un *upload preset* sin firma (`services/cloudinary.js`), así la app solo usa
+  `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` y `EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET` y nunca la API secret. `services/drivers.js` sube las cinco fotos en
+  paralelo, reemplaza las URI locales por URL y crea el documento en `drivers` con `status: 'pending_approval'` y `createdAt: serverTimestamp()`;
+  para aprobar se cambia el campo a `approved` en la consola. El botón se deshabilita mientras envía y el error se muestra debajo del botón. Al
+  terminar se muestra `PendingApprovalScreen`. El `commissionRate` aceptado queda guardado con los documentos.
+  Verificación: `npx expo export --platform android` sin errores. Falta probar contra un proyecto real de Firebase y Cloudinary con `.env`.
+- **Archivos afectados:** `src/services/cloudinary.js`, `src/services/drivers.js`, `src/screens/PendingApprovalScreen.js`,
+  `src/navigation/RegistrationTabs.js`.
+- **Commit:** facd995
+
+## #012 · 2026-11-06 08:13 (UTC-5) · Guardar el registro en Firestore sin subir imágenes a Cloudinary
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** El PDF solo recomienda Cloudinary (sección 7), no lo exige. ¿Cómo guardo las fotos del registro en Firestore de la forma más simple, sin
+  gestionar un servicio de imágenes?
+- **Respuesta:** Elimina la subida y guarda en el documento de `drivers` lo que ya devuelve `expo-image-picker`: la URI de cada foto (`photoUri`,
+  `vehiclePhotoUri`, `licensePhotoUri`, `soatPhotoUri`, `techInspectionPhotoUri`). `submitDriverRegistration` queda en un solo `addDoc` con
+  `personal`, `vehicle`, `documents`, `status: 'pending_approval'` y `createdAt: serverTimestamp()`. Limitación: son rutas locales (`file://...`) que solo
+  existen en el teléfono que tomó la foto, así que el panel de aprobación no podrá mostrar las imágenes; sirven para la práctica, no para producción.
+  Para producción hay que subir los archivos a un almacenamiento (Cloudinary o Firebase Storage) y guardar su URL pública. No conviene guardar las
+  imágenes en base64 dentro de Firestore: cada documento tiene un límite de 1 MiB.
+- **Archivos afectados:** `src/services/drivers.js`, `src/services/cloudinary.js` (eliminado), `.env.example`.
+
+## #013 · 2026-11-06 12:48 (UTC-5) · "Ya tengo cuenta": iniciar sesión sin Firebase Auth
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** El conductor ya queda registrado en Firestore, pero si cierra la app o cambia de teléfono no puede volver a entrar. ¿Cómo agrego un "Ya tengo cuenta" sin usar Firebase Auth?
+- **Respuesta:** Sin Authentication hace falta algo que haga de "usuario". Como el documento de identidad ya se pide en el registro, se busca el conductor con
+  `where('personal.idNumber', '==', idNumber)` (un `getDocs` con `limit(1)`) y se guarda su id de documento como sesión en AsyncStorage. Un
+  `SessionContext` restaura esa sesión al abrir la app y escucha el documento con `onSnapshot`, por lo que el estado (Pendiente de aprobación o Aprobado) se
+  actualiza solo; si el documento ya no existe, se limpia la sesión. Tras enviar el registro también se inicia sesión con el id devuelto por `addDoc`, en
+  lugar de un estado local `submitted`. La navegación raíz decide entre dos casos: sin sesión, un Stack con Registro y Login; con sesión, la pantalla de
+  estado con "Cerrar sesión". Límite importante: cualquiera que conozca un documento de identidad entra a esa cuenta, y la consulta exige que las reglas de
+  Firestore permitan leer `drivers`; para producción hay que pasar a Firebase Auth. En iOS la consulta por un campo anidado no necesita índice.
+- **Archivos afectados:** `App.js`, `src/context/SessionContext.js`, `src/navigation/RootNavigator.js`, `src/navigation/RegistrationTabs.js`, `src/screens/LoginScreen.js`, `src/screens/PendingApprovalScreen.js`, `src/screens/PersonalDataScreen.js`, `src/components/PrimaryButton.js`, `src/services/drivers.js`, `src/services/preferences.js`.
+
+## #014 · 2026-11-09 15:54 (UTC-5) · Drawer y pantalla de mapa al aprobarse el conductor
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Cuando la cuenta pasa a Aprobado, ¿cómo cambio de la pantalla de estado a una app con menú lateral y un mapa, sin romper el flujo de registro?
+- **Respuesta:** En `RootNavigator`, si hay sesión y `driver.status === 'approved'` se devuelve un `AppDrawer`; si sigue pendiente se mantiene
+  `PendingApprovalScreen`. Como el estado llega por `onSnapshot`, el cambio ocurre solo cuando alguien aprueba el documento. El Drawer usa
+  `drawerContent` propio: nombre del conductor, `DrawerItemList` y un `DrawerItem` "Cerrar sesión" que llama a `endSession`. La pantalla Inicio es
+  `MapScreen` con `MapView` de `react-native-maps` centrado en Bogotá. En iOS usa Apple Maps y no necesita llave; en Android el mapa requeriría llave de
+  Google. `react-native-maps` no funciona completo en Expo Go: hace falta un development build.
+- **Archivos afectados:** `src/navigation/AppDrawer.js`, `src/screens/MapScreen.js`, `src/navigation/RootNavigator.js`.
+
+## #015 · 2026-11-09 15:54 (UTC-5) · Escuchar solicitudes de viaje y mostrar la tarjeta con temporizador
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo escucho en tiempo real los viajes en estado `requested`, muestro una tarjeta con 15 segundos para decidir y evito que dos conductores acepten el mismo viaje?
+- **Respuesta:** `useTripRequests` abre un `onSnapshot` sobre `trips` con `where('status', '==', 'requested')`, solo mientras `enabled`, y limpia la
+  suscripción al desmontar. Filtra en el cliente las solicitudes que ya tienen `driverId`, las que este conductor rechazó (`rejectedBy`) y las de más de 10
+  minutos, y devuelve la más antigua. `TripRequestCard` calcula el tiempo restante contra una hora límite (`Date.now()`) en vez de restar de uno en uno, así
+  no se desfasa si la app queda en segundo plano; al llegar a cero rechaza sola. Aceptar usa `runTransaction`: lee el viaje y solo escribe `driverId` y
+  `accepted` si sigue en `requested` y sin conductor; si otro se adelantó lanza `trip-taken`. Rechazar no cambia el estado: agrega el id con `arrayUnion` a
+  `rejectedBy`, para que el viaje siga visible a los demás. La tarjeta muestra `fare` y `driverEarnings` que escribe el pasajero. Las reglas de
+  Firestore deben permitir leer y actualizar `trips`.
+- **Archivos afectados:** `src/services/trips.js`, `src/hooks/useTripRequests.js`, `src/components/TripRequestCard.js`, `src/config/app.js`, `src/utils/formatters.js`, `src/screens/MapScreen.js`.
+
+## #016 · 2026-11-09 15:54 (UTC-5) · Función única para calcular la tarifa y la comisión
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo calculo la tarifa, la comisión del 20 % y la ganancia neta en una sola función pura, de forma que la estimación y el cierre del viaje den siempre el mismo resultado?
+- **Respuesta:** `calculateFare({ distanceKm, durationMin, category, tip })` en `src/utils/calculateFare.js`, sin React ni Firebase. Toma todos los valores
+  de `src/config/pricing.js`: `base + distancia x km + duración x min`, multiplicado por la categoría (economy 1.0, xl 1.4, premium 1.8) y con mínimo de
+  $ 6.000. La tarifa se redondea al múltiplo de 100 COP más cercano ANTES de calcular la comisión (`Math.round(fare x 0.2)`), y la propina se suma
+  completa a la ganancia: `driverEarnings = fare - commission + tip`. Una categoría desconocida lanza un error en lugar de devolver NaN, y la propina
+  negativa se trata como 0. Ejemplo (10 km, 20 min, economy): 3.500 + 12.000 + 5.000 = 20.500; comisión 4.100; neto 16.400. Verificado con pruebas en
+  Node (neto, propina, tarifa mínima, categoría XL y categoría inválida). Cada viaje debe guardar además el `commissionRate` usado.
+- **Archivos afectados:** `src/utils/calculateFare.js` (nuevo); `src/config/pricing.js` es la fuente de los valores y no cambia.
+
+## #017 · 2026-11-09 16:26 (UTC-5) · Seguir la ubicación del conductor en el mapa
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo pido el permiso de ubicación, sigo la posición del conductor en tiempo real y hago que el mapa lo acompañe sin dejar suscripciones abiertas?
+- **Respuesta:** El hook `useDriverLocation` llama a `Location.requestForegroundPermissionsAsync()` y, si el permiso se concede, abre
+  `Location.watchPositionAsync` con precisión `Balanced`, cada 4 s y al menos 5 m de movimiento. Guarda `{ lat, lng, heading }` (el rumbo vale -1 cuando el
+  dispositivo no lo conoce, por eso se normaliza a 0). Como la suscripción se obtiene de forma asíncrona, el `useEffect` usa una bandera `active`: si el
+  componente se desmonta antes de que `watchPositionAsync` responda, la suscripción recién creada se cancela en el acto; si no, se cancela en la función de
+  limpieza. `MapScreen` usa `animateToRegion` desde un ref cuando cambia la posición y activa `showsUserLocation`; si el permiso se niega muestra un aviso
+  rojo en lugar de `Alert`. Todavía no se escribe nada en Firestore (eso llega con el botón Disponible). En iOS el permiso ya está declarado en
+  `app.json` con el plugin de `expo-location`.
+- **Archivos afectados:** `src/hooks/useDriverLocation.js`, `src/screens/MapScreen.js`, `src/config/app.js`.
+
+## #018 · 2026-11-10 11:12 (UTC-5) · Botón Disponible/No disponible solo para cuentas aprobadas
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo agrego un interruptor Disponible/No disponible que solo se pueda activar con la cuenta aprobada, que recuerde el último estado y que controle cuándo se escuchan solicitudes y se publica la ubicación?
+- **Respuesta:** `AvailabilityToggle` es un componente de presentación (pastilla con `Switch`) que se deshabilita cuando `isApproved` es falso y muestra
+  el motivo debajo. `MapScreen` guarda `available` en estado y calcula `working = isApproved && available`; esa bandera alimenta
+  `useTripRequests({ enabled: working })` y `useDriverLocation({ publish: working })`, así que fuera de Disponible no hay `onSnapshot` sobre `trips` ni
+  escrituras de posición. Al cambiar el interruptor se actualiza la interfaz de inmediato y luego se escribe `isAvailable` con `updateDoc`; si la escritura
+  falla se revierte el interruptor y se muestra un error bajo la pastilla. El último estado se guarda en AsyncStorage (`@driver_available`) y al abrir el
+  mapa se restaura y se vuelve a escribir en Firestore, porque la app pudo cerrarse estando Disponible. `useDriverLocation` escribe
+  `location: { lat, lng, heading }` y `locationUpdatedAt` como máximo una vez por intervalo (4 s) mientras `publish` sea verdadero. Límite: si la app se cierra
+  a la fuerza, `isAvailable` queda en `true` en Firestore hasta que el conductor la vuelva a abrir. Las reglas de Firestore deben permitir actualizar
+  `drivers`. AsyncStorage solo guarda una preferencia, no datos sensibles.
+- **Archivos afectados:** `src/components/AvailabilityToggle.js`, `src/screens/MapScreen.js`, `src/hooks/useDriverLocation.js`, `src/services/drivers.js`, `src/services/preferences.js`.
+
+## #019 · 2026-11-11 07:30 (UTC-5) · Pantalla de ganancias por periodo y saldo del conductor
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo muestro las ganancias netas del conductor de hoy, de la semana y del mes, con viajes, comisiones y propinas, sin recalcular todo en cada render?
+- **Respuesta:** `useEarnings` abre un `onSnapshot` sobre `trips` con `where('driverId', '==', driverId)` (un solo campo, sin índice compuesto) y lo cancela al
+  desmontar; el filtro por fechas se hace en el cliente. Con `useMemo` y dependencia `[trips]` calcula los tres resúmenes: `getPeriodRange` da el rango de cada
+  periodo (la semana empieza el lunes) y `summarizeTrips` suma viajes, total facturado, comisiones, propinas y ganancia neta, más el promedio por viaje. Solo
+  cuentan los viajes `completed` o `paid`, fechados por `completedAt` (o `createdAt` si falta). Un segundo `useMemo` calcula el saldo: los viajes pagados por
+  pasarela suman `driverEarnings` y los pagados en efectivo restan la comisión, porque el conductor ya cobró el dinero y debe a la plataforma su parte; por eso
+  el saldo puede quedar negativo. La pantalla es una entrada nueva del Drawer. Verificado con pruebas en Node (rangos de hoy, semana y mes, propinas, promedio,
+  saldo con efectivo y lista vacía). Las reglas de Firestore deben permitir leer `trips`.
+- **Archivos afectados:** `src/hooks/useEarnings.js`, `src/screens/EarningsScreen.js`, `src/components/InfoRow.js`, `src/utils/dates.js`, `src/utils/trips.js`, `src/services/trips.js`, `src/navigation/AppDrawer.js`.
+
+## #020 · 2026-11-11 08:52 (UTC-5) · Historial de viajes con filtros y detalle de cada viaje
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo muestro el historial de viajes del conductor con filtros por periodo y método de pago, sin cargar toda la lista de golpe, y cómo abro el detalle de un viaje?
+- **Respuesta:** `useDriverTrips` se suscribe con `onSnapshot` a los viajes del conductor (`where('driverId', '==', driverId)`) y los ordena del más reciente al más
+  antiguo en el cliente, así no hace falta un índice compuesto. `HistoryScreen` usa un `FlatList`: el periodo (Hoy, Semana, Mes o Rango) y el método de pago se aplican
+  con `filterTrips` dentro de un `useMemo`, y solo se renderizan 20 viajes (`historyPageSize`) que crecen con `onEndReached`; al cambiar un filtro el contador vuelve a 20.
+  En el rango personalizado, si la fecha inicial es posterior a la final se muestra el error bajo el campo y la lista queda vacía. Cada fila muestra fecha, ruta,
+  categoría, tarifa, ganancia neta y una insignia de pago (`paymentLabel`: Aprobado, Efectivo, Pendiente o Rechazado). El detalle necesita navegar desde una lista, por eso
+  el Drawer apunta a un `HistoryNavigator` (Stack con la lista y el detalle) en lugar de a la pantalla suelta; el botón del menú se pone con `DrawerToggleButton`.
+  `TripDetailScreen` escucha un solo viaje con `subscribeTrip` y muestra tarifa, comisión con su porcentaje, propina, ganancia neta y calificación. Mientras no se guarde
+  la ruta recorrida, el mapa dibuja una línea recta entre origen y destino. Verificado con pruebas en Node (filtro por método, etiquetas de pago y orden por fecha).
+  Las reglas de Firestore deben permitir leer `trips`.
+- **Archivos afectados:** `src/screens/HistoryScreen.js`, `src/screens/TripDetailScreen.js`, `src/navigation/HistoryNavigator.js`, `src/navigation/AppDrawer.js`, `src/hooks/useDriverTrips.js`, `src/components/PaymentBadge.js`, `src/utils/trips.js`, `src/utils/formatters.js`, `src/services/trips.js`, `src/config/app.js`.
+
+## #021 · 2026-11-11 09:04 (UTC-5) · Perfil del conductor: editar datos sin tocar el estado de la cuenta
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** ¿Cómo permito que el conductor edite su perfil (contacto, vehículo y correo de Mercado Pago) con la misma validación del registro, mostrando lo que no puede cambiar y sin que pueda modificar su estado de aprobación?
+- **Respuesta:** `ProfileScreen` arma el formulario desde el documento del conductor que ya entrega `SessionContext`, y reutiliza los validadores del registro
+  (`validateFullName`, `validatePhone`, `validateEmail`, `validateVehicleText`, `validateColor`, `validateCapacity`) con el patrón de campo tocado: el error aparece bajo el campo al salir de él, y
+  al guardar se marcan todos. El formulario no se reescribe con los datos de Firestore una vez que el usuario empieza a editar, para no pisar lo que escribe. Se guarda con
+  `updateDoc` y claves con punto (`'personal.fullName'`, `'vehicle.brand'`, `'documents.mercadoPagoEmail'`), que cambian solo esos campos y dejan intactos los demás
+  del mapa. Categoría, placa, año y los vencimientos de licencia, SOAT y técnico-mecánica se muestran en solo lectura. La categoría se pasa a `validateCapacity`
+  porque XL exige mínimo 6 pasajeros. Cambiar el idioma también se guarda en AsyncStorage. No hay botón de cerrar sesión aquí: ya existe en el Drawer. El estado de la
+  cuenta (`status`) no se envía nunca; las reglas de Firestore deben permitir actualizar `drivers` solo si `status` no cambia.
+- **Archivos afectados:** `src/screens/ProfileScreen.js`, `src/navigation/AppDrawer.js`, `src/services/drivers.js`.
+
+## #022 · 2026-11-12 10:32 (UTC-5) · Simular al pasajero: crear solicitudes de prueba desde la app
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** No tenemos la API del pasajero. ¿Cómo simulo desde la propia app que un pasajero pide un viaje, para probar la tarjeta de solicitud sin escribir documentos a mano?
+- **Respuesta:** Se agrega una pantalla "Simulador de pasajero" en el Drawer, marcada como SOLO DESARROLLO, que hace lo mismo que haría la app del pasajero: crea un documento
+  en `trips` con `createTestTrip` (estado `requested`, `driverId: null`, `paymentStatus: 'pending'`). El origen es un punto aleatorio a 0,8 a 2 km de la posición
+  del conductor y el destino otro a 2 a 5 km del origen; ambos se ajustan a la carretera más cercana con el servicio `nearest` de OSRM (gratuito y sin llave), y si falla
+  se usa el punto tal cual. La distancia y la duración se piden una sola vez al crear (`getDistanceMatrix`: Google si hay llave en `.env`, OSRM como respaldo, y una línea recta
+  con factor 1,3 si todo falla). La tarifa sale de la misma `calculateFare` con la categoría y la propina elegidas, y la comisión se toma de `PRICING.commissionRate`.
+  El conductor elige categoría, método de pago (Mercado Pago o Efectivo) y propina; no hay cobro real. Para recibirla hay que estar Disponible en Inicio. Las reglas de Firestore
+  deben permitir crear en `trips` con `fare` entero, y por eso el monto se redondea antes de enviarse. Cuando exista la API real, esta pantalla se quita sin tocar el resto.
+- **Archivos afectados:** `src/screens/PassengerSimulatorScreen.js`, `src/services/maps.js`, `src/utils/geo.js`, `src/services/trips.js`, `src/navigation/AppDrawer.js`, `src/config/app.js`.
+
+## #023 · 2026-11-12 10:10 (UTC-5) · Viaje activo: ir por el pasajero, llevarlo al destino y ver el carro moverse
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Al aceptar una solicitud, ¿cómo llevo al conductor por los estados del viaje (en camino, en curso, terminado), muestro el carro moviéndose por la ruta hasta la recogida y luego hasta el destino, y calculo la tarifa final?
+- **Respuesta:** Aceptar sigue siendo una transacción dentro de los 15 s de la tarjeta. `useActiveTrip` escucha los viajes del conductor y devuelve el que está en `accepted`, `driver_arriving` o
+  `in_progress`; `MapScreen` abre `ActiveTripScreen` una sola vez por viaje (también al reabrir la app con un viaje en curso) y deja de escuchar solicitudes mientras haya uno activo, así solo se atiende un
+  viaje a la vez. La navegación raíz pasó a un Stack (`Main` con el Drawer, `ActiveTrip` y `TripSummary`) para que el viaje cubra todo el menú. Al entrar, la pantalla pide la ruta una sola vez a la recogida
+  (Distance Matrix para la llegada estimada y Directions para el trazado; Google si hay llave y OSRM si no) y pasa el viaje a `driver_arriving`. `useRouteSimulation` mueve el carro con `requestAnimationFrame` sobre la
+  polilínea a 120 km/h (`simulationSpeedKmh`), girando suave con `smoothAngle` y publicando la posición en Firestore cada 4 s. Al llegar se habilita "Pasajero a bordo" (`in_progress`), se pide la ruta al destino y el carro
+  vuelve a salir; al llegar se habilita "Finalizar viaje", que recalcula la tarifa con `calculateFare` usando la distancia y duración de la ruta recorrida, guarda `commissionRate` y la polilínea codificada y pasa a
+  `completed`. Los botones quedan grises hasta llegar pero siguen siendo tocables, así que cada manejador valida `arrived` y `busy` para no avanzar antes de tiempo ni enviar dos veces. Se puede cancelar antes de iniciar el
+  viaje, con confirmación. La pantalla de resumen muestra tarifa, comisión, propina y ganancia neta; el cobro (efectivo o pasarela) aún no se registra. La simulación es el único modo: no se sigue el GPS real.
+- **Archivos afectados:** `src/screens/ActiveTripScreen.js`, `src/screens/TripSummaryScreen.js`, `src/screens/MapScreen.js`, `src/navigation/RootNavigator.js`, `src/hooks/useActiveTrip.js`, `src/hooks/useRouteSimulation.js`, `src/components/CarMarker.js`, `src/services/trips.js`, `src/config/app.js`.
+
+## #024 · 2026-11-12 10:28 (UTC-5) · Selectores más pequeños, pasajero cerca del conductor y ubicación al instante
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Los selectores se ven muy grandes en toda la app, el pasajero simulado debe aparecer cerca de la ubicación real del conductor y la ubicación tarda en cargar al iniciar sesión. ¿Cómo lo ajusto?
+- **Respuesta:** Tamaño: el `Picker` nativo de iOS es una rueda de unos 216 px, por eso `SelectField` ahora es un campo de 44 px que muestra la opción elegida y abre la rueda en una hoja inferior (`Modal`)
+  con un botón "Listo"; en Android mantiene el desplegable con la misma altura. `SegmentedControl`, `FormField` y `DateField` bajaron a 34 y 44 px con letra de 13 a 15, y se quitó la opción `compact` porque ahora
+  es el tamaño base. Pasajero: el simulador usaba su propia suscripción de ubicación, que al abrir la pantalla aún estaba vacía y caía en Bogotá; ahora lee la ubicación compartida, genera la recogida a 300 m a 1 km
+  del conductor (ajustada a la carretera) y el destino a 2 a 5 km de la recogida, y el carro sale de la posición real del conductor hacia la recogida y luego al destino. Sin ubicación el simulador espera, y solo
+  usa Bogotá si el permiso fue denegado. Velocidad de carga: `useDriverLocation` pasa a un `LocationProvider` único que envuelve la app del conductor aprobado y primero entrega
+  `getLastKnownPositionAsync` (inmediata) y la lectura de `getCurrentPositionAsync`, antes de que llegue el primer evento de `watchPositionAsync`; el mapa se abre ya centrado si hay posición. La escritura
+  de la ubicación en Firestore se separó en `usePublishLocation`, que mantiene el límite de una escritura cada 4 s. Límite: sin una posición previa en el sistema, la primera lectura real puede tardar unos segundos.
+- **Archivos afectados:** `src/components/SelectField.js`, `src/components/SegmentedControl.js`, `src/components/FormField.js`, `src/components/DateField.js`, `src/context/LocationContext.js`, `src/hooks/useDriverLocation.js`, `src/hooks/usePublishLocation.js`, `src/navigation/RootNavigator.js`, `src/screens/MapScreen.js`, `src/screens/PassengerSimulatorScreen.js`, `src/screens/ActiveTripScreen.js`, `src/screens/HistoryScreen.js`.
+
+## #025 · 2026-11-12 11:13 (UTC-5) · Toda la app en español o inglés y estado del viaje en el historial
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Si el conductor elige inglés, ¿cómo traduzco toda la interfaz sin instalar librerías, incluyendo los errores de validación? Además, en el historial todos los viajes mostraban "Pendiente" y los cancelados no aparecían.
+- **Respuesta:** Traducción: dos diccionarios planos (`src/i18n/es.js` y `en.js`, 240 claves en inglés como `validation.required`) y `translate(language, key, params)`, que interpola `{{name}}`, usa español como respaldo, devuelve la propia
+  clave si no existe y devuelve `''` para una clave vacía, de modo que `t(error)` sirve aunque no haya error. `LanguageProvider` guarda el idioma en estado, lo restaura de AsyncStorage al abrir y lo guarda al cambiarlo; `useLanguage()` entrega `{ language, setLanguage, t }`.
+  Al elegir English en el registro o en el perfil se llama `setLanguage` y toda la interfaz cambia al instante. Con sesión iniciada, un `LanguageSync` aplica `driver.personal.language` solo cuando ese valor cambia, para no pisar un cambio aún sin guardar. Los validadores
+  dejaron de devolver texto: devuelven claves y cada pantalla traduce en `errorOf` (así no cambió ninguna regla de validación). Las opciones (géneros, colores, categorías) guardan `labelKey` y `SelectField` y `SegmentedControl` la traducen; los valores guardados en Firestore
+  no cambian. Los hooks y servicios guardan claves de error y quien las muestra las traduce. `formatDistance` usa coma en español y punto en inglés, y `formatDateTime` usa "p. m." o "PM" según el idioma. Verificado con un script que comprueba que ambos diccionarios tienen las mismas
+  claves y los mismos marcadores, y que no hay claves usadas sin definir ni definidas sin usar, más pruebas en Node de los formatos y los validadores. Historial: "Pendiente" es correcto mientras el cobro no exista, porque esa insignia es el estado del PAGO y todavía no se registra ningún cobro. Faltaba el estado
+  del VIAJE, así que se agregó `tripStatusLabel` (Completado, Pagado o Cancelado) con su insignia `TripStatusBadge`, y `filterHistory`, que además de `completed` y `paid` incluye `cancelled`. Un cancelado se fecha por `cancelledAt` (ahora se guarda al cancelar) o, si falta, por `createdAt`, se muestra con
+  la tarifa tachada, sin ganancia neta ni insignia de pago, y su detalle indica quién canceló (`cancelledBy`). `filterTrips` e `isFinished` no cambiaron: ganancias y saldo siguen contando solo `completed` y `paid`, y una prueba en Node lo comprueba.
+- **Archivos afectados:** `src/i18n/*`, `src/context/LanguageContext.js`, `App.js`, `src/utils/validators.js`, `src/utils/formatters.js`, `src/utils/trips.js`, `src/data/options.js`, `src/components/TripStatusBadge.js`, `src/components/PaymentBadge.js`, `src/components/*` (selectores, fotos, fechas, tarjeta de solicitud), `src/screens/*`, `src/navigation/*`, `src/hooks/*`, `src/context/SessionContext.js`.
+
+## #026 · 2026-11-12 11:14 (UTC-5) · Insignia de pago con método y estado, y efectivo cobrado al terminar el viaje
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** En el historial la insignia de pago solo decía "Pendiente" y no se entendía si hablaba del viaje o del pago. ¿Cómo muestro el método y el estado del pago (Efectivo: pagado, Mercado Pago: no pagado) y cómo hago que un viaje en efectivo quede pagado al terminar?
+- **Respuesta:** `paymentState(trip)` reduce el pago a tres estados: `paid` (el viaje está en `paid`, o `paymentStatus` es `approved` o `cash`), `rejected` (la pasarela lo rechazó) y `pending` (aún sin cobrar). `paymentLabel` los combina con el método
+  en una clave de traducción (`payment.cash.paid`, `payment.mercadopago.pending`, ...), con textos como "Efectivo: pagado", "Efectivo: por cobrar" o "Mercado Pago: no pagado", y `PaymentBadge` elige el color por estado (verde pagado, gris pendiente, rojo rechazado), distinto de
+  la insignia del estado del viaje. En efectivo no hay pasarela que confirme, así que al finalizar el viaje la app hace una segunda escritura, `markCashReceived` (`paymentStatus: 'cash'`, `status: 'paid'`, `paidAt`); son dos `updateDoc` porque las reglas de Firestore solo permiten pasar de
+  `in_progress` a `completed` y de ahí a `paid`. Si la segunda escritura falla, el viaje queda `completed` con "Efectivo: por cobrar" y se registra el error. El saldo no cambia de criterio: un viaje en efectivo cobrado resta la comisión. Con Mercado Pago y Stripe el pago
+  sigue "no pagado" hasta que exista el cobro por pasarela. Una prueba en Node cubrió los estados por método y el saldo, y detectó una referencia a una constante que ya no existía.
+- **Archivos afectados:** `src/utils/trips.js`, `src/components/PaymentBadge.js`, `src/services/trips.js`, `src/screens/ActiveTripScreen.js`, `src/i18n/es.js`, `src/i18n/en.js`.
+
+## #027 · 2026-11-12 12:33 (UTC-5) · Al registrarse, mostrar "Pendiente de aprobación" sin depender de releer el documento
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Después de enviar el registro la app vuelve a Datos personales, pero el conductor sí quedó creado: al iniciar sesión aparece bien "Pendiente de aprobación". ¿Por qué pasa y cómo lo evito?
+- **Respuesta:** Al terminar el registro la sesión se iniciaba con solo el id y el estado quedaba en "esperando al conductor" hasta que el `onSnapshot` del documento respondiera. Si esa primera lectura llegaba vacía o con error, la navegación raíz
+  (que muestra la pantalla de estado solo cuando hay `driverId` y `driver`) caía otra vez en el registro, y `endSession` borraba la sesión guardada si el documento aparecía como inexistente. En el inicio de sesión no pasa porque el documento ya
+  lleva tiempo creado. La causa exacta de esa primera lectura no se pudo confirmar sin el dispositivo, así que el arreglo la vuelve irrelevante: `startSession(id, initialDriver)` recibe lo que se acaba de enviar (con `status: 'pending_approval'`) y lo
+  muestra de inmediato, y el id recién creado se recuerda en un ref para que una lectura vacía no cierre la sesión; en cuanto llega el documento real se reemplaza. Un documento inexistente sigue cerrando la sesión si viene de una sesión restaurada.
+  Para la siguiente prueba, si vuelve a pasar, hay que revisar en la consola de Metro el aviso `subscribeDriver` (suele ser un error de permisos de Firestore).
+- **Archivos afectados:** `src/context/SessionContext.js`, `src/navigation/RegistrationTabs.js`.
+
+## #028 · 2026-11-12 12:37 (UTC-5) · Cerrar el teclado numérico al tocar cualquier otro control
+
+- **Solicitado por:** kpineda
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** Al enfocar un campo numérico y luego tocar otro campo, un selector o un botón, el teclado numérico se queda abierto. ¿Cómo hago que se cierre con cualquier acción?
+- **Respuesta:** Con `keyboardShouldPersistTaps="handled"` un toque sobre un control (`Pressable`) cuenta como "manejado" y no cierra el teclado; solo cierra el que cae en una zona vacía. Además, en iOS los teclados `numeric`, `number-pad` y `phone-pad` no tienen tecla de retorno.
+  Se resolvió en tres frentes: (1) `Keyboard.dismiss()` al inicio del `onPress` de los controles que no son un `TextInput` (selectores, campo de fecha, foto, casilla, botones y selector segmentado); (2) `keyboardDismissMode="on-drag"` en los formularios, para que arrastrar el scroll lo cierre; (3) una barra "Listo"
+  encima del teclado numérico en iOS con `InputAccessoryView`, que `FormField` agrega solo cuando `keyboardType` es numérico. Pasar de un campo de texto a otro no necesita nada especial: el teclado cambia solo. En Android el botón de retroceso del sistema ya cierra el teclado.
+- **Archivos afectados:** `src/components/FormField.js`, `SelectField.js`, `DateField.js`, `PhotoPicker.js`, `CheckboxField.js`, `PrimaryButton.js`, `SegmentedControl.js`, `src/screens/{Personal,Vehicle,Documents,Login,Profile}Screen.js`, `PassengerSimulatorScreen.js`, `src/i18n/es.js`, `src/i18n/en.js`.

@@ -29,7 +29,7 @@ No asumas APIs de versiones anteriores.
 3. **Explicar cada cambio.** Al terminar una tarea, explicar (en la respuesta y en la bitácora):
    **qué** cambió, **por qué** y **en qué afecta**.
 4. **Reportar errores, no ocultarlos.** Si se detecta un error ajeno a la tarea, se reporta al responsable antes de corregirlo.
-5. **Secretos.** Llaves de Firebase, Google Maps, Cloudinary, `access_token` de Mercado Pago o `secret key` de Stripe nunca van en el
+5. **Secretos.** Llaves de Firebase, Google Maps, `access_token` de Mercado Pago o `secret key` de Stripe nunca van en el
    código ni en Git. La app lee solo variables `EXPO_PUBLIC_*` desde `.env` (excluido de Git; los nombres están en `.env.example`).
    Las llaves secretas de pasarela viven únicamente en el backend. Solo credenciales de prueba.
 6. **Datos sensibles.** No guardar números de cuenta bancaria ni de tarjeta en la app ni en AsyncStorage.
@@ -41,7 +41,7 @@ No asumas APIs de versiones anteriores.
 - Navegación: `@react-navigation` — Stack (flujo del viaje), Tabs (registro del conductor) y Drawer (perfil, historial, ganancias, configuración).
 - Firebase (JS SDK `firebase`): Firestore en tiempo real (`onSnapshot`) para ubicación del conductor y estado del viaje.
   Cliente en `src/services/firebase.js`.
-- Mapas: `react-native-maps` · Ubicación: `expo-location` · Fotos: `expo-image-picker` (subida a Cloudinary) ·
+- Mapas: `react-native-maps` · Ubicación: `expo-location` · Fotos: `expo-image-picker` (por ahora se guarda la URI local de cada foto en Firestore) ·
   Notificaciones: `expo-notifications` · Pagos: `react-native-webview` / `expo-web-browser` (Checkout Pro) ·
   Formularios: `@react-native-picker/picker`, `@react-native-community/datetimepicker`.
 - Backend de pagos (Node.js/Express o Cloud Functions): fuera de esta app; la app solo envía `tripId` y monto.
