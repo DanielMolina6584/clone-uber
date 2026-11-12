@@ -294,3 +294,17 @@ Reglas de uso: ver `AGENTS.md` (regla 2). Las entradas nuevas van **al final**; 
   porque XL exige mínimo 6 pasajeros. Cambiar el idioma también se guarda en AsyncStorage. No hay botón de cerrar sesión aquí: ya existe en el Drawer. El estado de la
   cuenta (`status`) no se envía nunca; las reglas de Firestore deben permitir actualizar `drivers` solo si `status` no cambia.
 - **Archivos afectados:** `src/screens/ProfileScreen.js`, `src/navigation/AppDrawer.js`, `src/services/drivers.js`.
+
+## #022 · 2026-11-12 10:32 (UTC-5) · Simular al pasajero: crear solicitudes de prueba desde la app
+
+- **Solicitado por:** dmolina
+- **Respondido por:** Claude Code (Claude Sonnet 5.5)
+- **Pregunta:** No tenemos la API del pasajero. ¿Cómo simulo desde la propia app que un pasajero pide un viaje, para probar la tarjeta de solicitud sin escribir documentos a mano?
+- **Respuesta:** Se agrega una pantalla "Simulador de pasajero" en el Drawer, marcada como SOLO DESARROLLO, que hace lo mismo que haría la app del pasajero: crea un documento
+  en `trips` con `createTestTrip` (estado `requested`, `driverId: null`, `paymentStatus: 'pending'`). El origen es un punto aleatorio a 0,8 a 2 km de la posición
+  del conductor y el destino otro a 2 a 5 km del origen; ambos se ajustan a la carretera más cercana con el servicio `nearest` de OSRM (gratuito y sin llave), y si falla
+  se usa el punto tal cual. La distancia y la duración se piden una sola vez al crear (`getDistanceMatrix`: Google si hay llave en `.env`, OSRM como respaldo, y una línea recta
+  con factor 1,3 si todo falla). La tarifa sale de la misma `calculateFare` con la categoría y la propina elegidas, y la comisión se toma de `PRICING.commissionRate`.
+  El conductor elige categoría, método de pago (Mercado Pago o Efectivo) y propina; no hay cobro real. Para recibirla hay que estar Disponible en Inicio. Las reglas de Firestore
+  deben permitir crear en `trips` con `fare` entero, y por eso el monto se redondea antes de enviarse. Cuando exista la API real, esta pantalla se quita sin tocar el resto.
+- **Archivos afectados:** `src/screens/PassengerSimulatorScreen.js`, `src/services/maps.js`, `src/utils/geo.js`, `src/services/trips.js`, `src/navigation/AppDrawer.js`, `src/config/app.js`.

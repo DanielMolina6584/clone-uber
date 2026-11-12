@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '../context/SessionContext';
 import EarningsScreen from '../screens/EarningsScreen';
 import MapScreen from '../screens/MapScreen';
+import PassengerSimulatorScreen from '../screens/PassengerSimulatorScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import { colors, spacing, typography } from '../theme';
 import HistoryNavigator from './HistoryNavigator';
@@ -62,6 +63,11 @@ export default function AppDrawer() {
         name="Earnings"
         component={EarningsScreen}
         options={{ title: 'Ganancias', drawerIcon: ({ color, size }) => <Ionicons name="cash-outline" size={size} color={color} /> }}
+      />
+      <Drawer.Screen
+        name="PassengerSimulator"
+        component={PassengerSimulatorScreen}
+        options={{ title: 'Simulador de pasajero', drawerIcon: ({ color, size }) => <Ionicons name="flask-outline" size={size} color={color} /> }}
       />
     </Drawer.Navigator>
   );

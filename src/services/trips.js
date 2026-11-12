@@ -1,4 +1,4 @@
-import { arrayUnion, collection, doc, onSnapshot, query, runTransaction, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, onSnapshot, query, runTransaction, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { db } from './firebase';
 
 export const TRIP_STATUS = {
@@ -43,4 +43,19 @@ export function acceptTrip(tripId, driverId) {
 // El viaje sigue en 'requested' para que lo vea otro conductor; este conductor queda excluido
 export function rejectTrip(tripId, driverId) {
   return updateDoc(tripRef(tripId), { rejectedBy: arrayUnion(driverId) });
+}
+
+// SOLO DESARROLLO: lo que normalmente escribe la app del pasajero
+export async function createTestTrip(data) {
+  const ref = await addDoc(collection(db, 'trips'), {
+    ...data,
+    driverId: null,
+    status: TRIP_STATUS.requested,
+    paymentStatus: 'pending',
+    paymentId: null,
+    rating: null,
+    createdAt: serverTimestamp(),
+    completedAt: null,
+  });
+  return ref.id;
 }
